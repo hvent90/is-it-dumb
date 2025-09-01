@@ -117,9 +117,9 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     
     // Basic validation
-    if (!body.session_id || !body.original_timestamp || !body.issue_category) {
-      return NextResponse.json({ 
-        error: 'Missing required fields: session_id, original_timestamp, issue_category' 
+    if (!body.session_id || !body.original_timestamp || !body.issue_category || !body.model_name) {
+      return NextResponse.json({
+        error: 'Missing required fields: session_id, original_timestamp, issue_category, model_name'
       }, { status: 400 });
     }
 
@@ -136,6 +136,7 @@ export async function POST(request: NextRequest) {
     const detailedReport: DetailedReport = {
       session_id: body.session_id,
       original_timestamp: body.original_timestamp,
+      model_name: body.model_name,
       issue_category: body.issue_category,
       severity: body.severity || 'medium',
       product_context: body.product_context || 'Unknown',
@@ -146,7 +147,7 @@ export async function POST(request: NextRequest) {
     const flattenedEvent: TinybirdEvent = {
       session_id: detailedReport.session_id,
       timestamp: new Date().toISOString(),
-      model_name: body.model_name || 'Unknown', // Should be provided or looked up
+      model_name: detailedReport.model_name,
       event_type: 'report',
       entry_path: 'search_tab', // Reports typically come from search tab
       quick_report_text: null,

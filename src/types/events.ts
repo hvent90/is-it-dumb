@@ -42,8 +42,9 @@ export interface SearchEvent extends EventBase {
  */
 export interface DetailedReport {
   // Corresponds to the session_id and timestamp of the initial event
-  session_id: string; 
+  session_id: string;
   original_timestamp: string;
+  model_name: string; // Required to identify the model being reported on
 
   issue_category: string;
   severity?: 'low' | 'medium' | 'high';

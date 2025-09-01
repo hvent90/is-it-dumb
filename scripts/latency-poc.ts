@@ -45,7 +45,7 @@ async function measureIngestionLatency(apiEndpoint: string): Promise<LatencyMeas
       throw new Error(`HTTP ${response.status}: ${await response.text()}`);
     }
 
-    const result = await response.json();
+    await response.json();
     const endTotal = performance.now();
     const totalTime = endTotal - startTotal;
 

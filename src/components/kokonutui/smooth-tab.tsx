@@ -284,7 +284,7 @@ const slideVariants = {
 
 const transition = {
     duration: 0.4,
-    ease: [0.32, 0.72, 0, 1],
+    ease: "easeInOut" as const,
 };
 
 export default function SmoothTab({
@@ -363,11 +363,11 @@ export default function SmoothTab({
                             <motion.div
                                 key={`card-${selected}`}
                                 custom={direction}
-                                variants={slideVariants as any}
+                                variants={slideVariants}
                                 initial="enter"
                                 animate="center"
                                 exit="exit"
-                                transition={transition as any}
+                                transition={transition}
                                 className="absolute inset-0 w-full h-full will-change-transform bg-card"
                                 style={{
                                     backfaceVisibility: "hidden",

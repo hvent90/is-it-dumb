@@ -1,4 +1,4 @@
-import { DetailedReport } from '@/types';
+import { DetailedReport } from '@/types/events';
 
 // Frontend-friendly interface for search submission
 export interface SearchSubmission {

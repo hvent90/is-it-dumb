@@ -134,7 +134,7 @@ export function ModelSearchInput({ onSubmitSuccess, onSubmitError, onModelSelect
       } else {
         onSubmitError?.(result.error || 'Failed to submit search event');
       }
-    } catch (error) {
+    } catch {
       onSubmitError?.('Network error occurred');
     }
   };
