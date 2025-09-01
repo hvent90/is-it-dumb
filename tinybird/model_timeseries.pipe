@@ -1,0 +1,27 @@
+DESCRIPTION >
+    Time-series of report counts for a specific model_name.
+    Accepts model_name parameter and returns daily report counts.
+
+PARAMETERS >
+    model_name String
+
+NODE reports_deduped
+SQL >
+    SELECT
+        session_id,
+        argMax(model_name, timestamp) as model_name,
+        argMax(timestamp, timestamp) as timestamp,
+        argMax(issue_category, timestamp) as issue_category
+    FROM llm_events
+    WHERE event_type = 'report'
+    GROUP BY session_id
+
+NODE timeseries
+SQL >
+    SELECT
+        toDate(timestamp) as date,
+        count() as report_count
+    FROM reports_deduped
+    WHERE model_name = {{ String(model_name) }}
+    GROUP BY date
+    ORDER BY date ASC
