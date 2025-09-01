@@ -1,6 +1,6 @@
 Document: Files Tree [FILE]
   └── Files Tree
-      ├── README.md                               // Contains project overview, setup, and deployment instructions.
+      ├── README.md                               // Contains project overview for 'Is It Dumb', setup, and deployment instructions.
       ├── package.json                            // Defines monorepo workspaces and root-level scripts.
       ├── tsconfig.json                           // Manages shared TypeScript settings across the monorepo.
       ├── .gitignore                              // Specifies files and directories to be ignored by version control.
