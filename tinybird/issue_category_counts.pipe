@@ -23,3 +23,5 @@ SQL >
     WHERE issue_category != '' AND issue_category IS NOT NULL
     GROUP BY issue_category
     ORDER BY report_count DESC
+
+TYPE endpoint

@@ -33,10 +33,10 @@ export function TrendingOverview({ highlightedModel }: TrendingOverviewProps) {
     setIsLoading(true);
 
     try {
-      // Fetch data from APIs
+      // Fetch data from APIs with current filter values
       const [modelCountsResult, issueCountsResult, qualityResult] = await Promise.all([
-        apiClient.getModelCounts(),
-        apiClient.getIssueCounts(),
+        apiClient.getModelCounts(timeRange, modelFamily),
+        apiClient.getIssueCounts(timeRange, modelFamily),
         mockQualityDataService.getQualityScoresForChart()
       ]);
 
@@ -74,10 +74,10 @@ export function TrendingOverview({ highlightedModel }: TrendingOverviewProps) {
     }
   };
 
-  // Load initial data
+  // Load initial data and refresh when filters change
   useEffect(() => {
     handleApplyFilters();
-  }, [highlightedModel]);
+  }, [highlightedModel, timeRange, modelFamily]);
 
   return (
     <div className="space-y-6">

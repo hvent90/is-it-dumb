@@ -18,6 +18,7 @@ SQL >
 
 NODE issue_breakdown
 SQL >
+    %
     SELECT
         issue_category,
         count() as report_count
@@ -26,3 +27,5 @@ SQL >
         AND issue_category != '' AND issue_category IS NOT NULL
     GROUP BY issue_category
     ORDER BY report_count DESC
+
+TYPE endpoint

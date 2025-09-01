@@ -6,6 +6,10 @@ const TINYBIRD_TOKEN = process.env.TINYBIRD_TOKEN;
 
 // Helper function to call Tinybird pipes
 async function callTinybirdPipe(pipeName: string, params: Record<string, string> = {}) {
+  if (!TINYBIRD_TOKEN) {
+    throw new Error('Tinybird API token not configured. Please set TINYBIRD_TOKEN environment variable.');
+  }
+
   const url = new URL(`${TINYBIRD_BASE_URL}/v0/pipes/${pipeName}.json`);
 
   // Add parameters
@@ -20,7 +24,8 @@ async function callTinybirdPipe(pipeName: string, params: Record<string, string>
   });
 
   if (!response.ok) {
-    throw new Error(`Tinybird API error: ${response.status} ${response.statusText}`);
+    const errorText = await response.text().catch(() => 'Unknown error');
+    throw new Error(`Tinybird API error: ${response.status} ${response.statusText} - ${errorText}`);
   }
 
   return response.json();
@@ -32,11 +37,16 @@ export async function GET(request: NextRequest) {
   const type = searchParams.get('type');
   const modelName = searchParams.get('model_name');
   const issueCategory = searchParams.get('issue_category');
+  const timeRange = searchParams.get('time_range');
+  const modelFamily = searchParams.get('model_family');
 
   try {
     switch (type) {
       case 'model_counts':
-        const modelCountsData = await callTinybirdPipe('model_report_counts');
+        const modelCountsParams: Record<string, string> = {};
+        if (timeRange) modelCountsParams.time_range = timeRange;
+        if (modelFamily) modelCountsParams.model_family = modelFamily;
+        const modelCountsData = await callTinybirdPipe('model_report_counts', modelCountsParams);
         return NextResponse.json({
           data: modelCountsData.data?.map((item: { model_name: string; report_count: number }) => ({
             name: item.model_name,
@@ -45,7 +55,10 @@ export async function GET(request: NextRequest) {
         });
 
       case 'issue_counts':
-        const issueCountsData = await callTinybirdPipe('issue_category_counts');
+        const issueCountsParams: Record<string, string> = {};
+        if (timeRange) issueCountsParams.time_range = timeRange;
+        if (modelFamily) issueCountsParams.model_family = modelFamily;
+        const issueCountsData = await callTinybirdPipe('issue_category_counts', issueCountsParams);
         return NextResponse.json({
           data: issueCountsData.data?.map((item: { issue_category: string; report_count: number }) => ({
             name: item.issue_category,

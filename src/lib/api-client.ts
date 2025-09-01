@@ -104,9 +104,15 @@ class ApiClient {
   }
 
   // Analytics data fetching methods
-  async getModelCounts(): Promise<{ data: Array<{ name: string; value: number }> }> {
+  async getModelCounts(timeRange?: string, modelFamily?: string): Promise<{ data: Array<{ name: string; value: number }> }> {
     try {
-      const response = await fetch('/api/analytics?type=model_counts');
+      const params = new URLSearchParams({
+        type: 'model_counts',
+        ...(timeRange && { time_range: timeRange }),
+        ...(modelFamily && modelFamily !== 'all' && { model_family: modelFamily }),
+      });
+
+      const response = await fetch(`/api/analytics?${params}`);
       const data = await response.json();
 
       if (!response.ok) {
@@ -129,9 +135,15 @@ class ApiClient {
     }
   }
 
-  async getIssueCounts(): Promise<{ data: Array<{ name: string; value: number }> }> {
+  async getIssueCounts(timeRange?: string, modelFamily?: string): Promise<{ data: Array<{ name: string; value: number }> }> {
     try {
-      const response = await fetch('/api/analytics?type=issue_counts');
+      const params = new URLSearchParams({
+        type: 'issue_counts',
+        ...(timeRange && { time_range: timeRange }),
+        ...(modelFamily && modelFamily !== 'all' && { model_family: modelFamily }),
+      });
+
+      const response = await fetch(`/api/analytics?${params}`);
       const data = await response.json();
 
       if (!response.ok) {

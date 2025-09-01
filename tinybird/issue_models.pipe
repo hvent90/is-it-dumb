@@ -18,6 +18,7 @@ SQL >
 
 NODE affected_models
 SQL >
+    %
     SELECT
         model_name,
         count() as report_count
@@ -26,3 +27,5 @@ SQL >
         AND model_name != ''
     GROUP BY model_name
     ORDER BY report_count DESC
+
+TYPE endpoint

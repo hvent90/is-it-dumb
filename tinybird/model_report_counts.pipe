@@ -23,3 +23,5 @@ SQL >
     WHERE model_name != ''
     GROUP BY model_name
     ORDER BY report_count DESC
+
+TYPE endpoint
