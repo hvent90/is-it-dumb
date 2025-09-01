@@ -1,0 +1,11 @@
+{
+  "name": "@is-it-dumb/types",
+  "version": "1.0.0",
+  "description": "Shared TypeScript types for is-it-dumb",
+  "main": "index.ts",
+  "types": "index.ts",
+  "private": true,
+  "devDependencies": {
+    "typescript": "^5.5.3"
+  }
+}
