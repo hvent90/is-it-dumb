@@ -93,12 +93,12 @@ class ApiClient {
       const data = await response.json();
       
       if (!response.ok) {
-        return { success: false, error: data.error || 'Failed to submit detailed report' };
+        return { success: false, error: data.error || 'Failed to submit report' };
       }
 
       return { success: true, report_id: data.report_id };
     } catch (error) {
-      console.error('Error submitting detailed report:', error);
+      console.error('Error submitting report:', error);
       return { success: false, error: 'Network error occurred' };
     }
   }

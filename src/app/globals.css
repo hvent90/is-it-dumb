@@ -59,7 +59,7 @@
 :root {
   --background: oklch(0.95 0 0);
   --foreground: oklch(0.2393 0 0);
-  --card: oklch(0.88 0 0);
+  --card: oklch(0.945 0 0);
   --card-foreground: oklch(0.2393 0 0);
   --popover: oklch(0.88 0 0);
   --popover-foreground: oklch(0.2393 0 0);
@@ -108,7 +108,7 @@
 .dark {
   --background: oklch(0.2178 0 0);
   --foreground: oklch(0.9067 0 0);
-  --card: oklch(0.2850 0 0);
+  --card: oklch(0.3232 0 0);
   --card-foreground: oklch(0.9067 0 0);
   --popover: oklch(0.2850 0 0);
   --popover-foreground: oklch(0.9067 0 0);
@@ -159,4 +159,14 @@
   body {
     @apply bg-background text-foreground;
   }
+}
+
+/* Hide SmoothTab card content area */
+.smooth-tab-wrapper > div > div:first-child {
+  display: none !important;
+}
+
+/* Make SmoothTab items take full width */
+.smooth-tab-wrapper .grid-cols-4 {
+  grid-template-columns: repeat(2, 1fr) !important;
 }

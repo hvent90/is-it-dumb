@@ -238,3 +238,10 @@ This section outlines the requirements for a simulated system that mimics automa
 [PRD-126] The accuracy of location-based analytics is dependent on the reliability of an external GeoIP lookup service. 
 
 [PRD-127] The effectiveness of identifying issue trends is dependent on the quality of the semantic analysis and clustering capabilities. 
+
+## [PRD-136] Architecture & Technology Stack
+### [PRD-135] Technology Stack
+The application has been migrated to a pure Next.js framework, unifying the frontend and backend development within a single project. This replaces the previous technology stack which was a combination of Next.js and Hono.
+
+### [PRD-137] Project Structure
+The codebase is organized in a standard project structure with all application code located in the ~/src directory. This is a change from the previous monorepo structure where the frontend code was located in ~/app/frontend.

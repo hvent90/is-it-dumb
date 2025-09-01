@@ -4,7 +4,7 @@ This document provides the technical blueprint for "Is It Dumb," a web applicati
 
 [TRD-2] A TypeScript-based frontend built with Next.js and styled using the shadcn UI component library, providing an interactive interface for users to report issues and view analytics. 
 
-[TRD-3] A lightweight TypeScript backend API responsible for ingesting user-submitted events, validating data, and securely forwarding it to the analytics platform. 
+[TRD-3] A lightweight TypeScript backend API, implemented as Next.js API Routes, responsible for ingesting user-submitted events, validating data, and securely forwarding it to the analytics platform. 
 
 [TRD-4] An analytics and data backend powered by Tinybird, which uses ClickHouse for real-time data ingestion and querying. This enables the near real-time dashboard functionality. A separate vector database will be used for the semantic analysis of user-submitted text. 
 
@@ -28,19 +28,15 @@ This document provides the technical blueprint for "Is It Dumb," a web applicati
 [TRD-15] Styling: A specific theme and set of CSS variables provided in the user interview must be implemented for both light and dark modes. 
 
 ## [TRD-16] High-Level Architecture
-A monolithic repository (
-
-monorepo
-
-) approach is chosen for simplicity and to easily share types between the frontend and backend. The architecture is logically separated into distinct services that can be deployed independently, primarily following a serverless model to optimize for scalability and cost.
+A standard Next.js project structure is chosen for simplicity. All application code is co-located within the src directory, which allows for easy sharing of types between the frontend components and backend API routes. The architecture follows a serverless model to optimize for scalability and cost.
 
 ### [TRD-17] Architectural Pattern
-The system will use a service-based architecture where the frontend application communicates with a dedicated backend API for data ingestion. For data retrieval, the frontend will query Tinybird's published APIs directly, which is a secure and highly performant pattern recommended by Tinybird.
+The frontend application communicates with a backend API, built using Next.js API Routes, for data ingestion. For data retrieval, the frontend will query Tinybird's published APIs directly, which is a secure and highly performant pattern recommended by Tinybird.
 
 ### [TRD-18] Main Components
 [TRD-19] Frontend Application (Next.js): A server-side rendered (SSR) React application. It is responsible for all UI rendering, state management, user interaction, and fetching analytics data directly from Tinybird's published API endpoints. 
 
-[TRD-20] Ingestion API (Hono on Cloudflare Workers / Vercel Edge): A lightweight, high-performance TypeScript API service. Its sole responsibilities are to receive search/report events from the frontend, validate the data against strict models, enrich it with server-side information (like GeoIP), and securely push it to the Tinybird Events API. 
+[TRD-20] Ingestion API (Next.js API Routes): A lightweight, high-performance API service integrated within the Next.js application. Its sole responsibilities are to receive search/report events from the frontend, validate the data against strict models, enrich it with server-side information (like GeoIP), and securely push it to the Tinybird Events API. 
 
 [TRD-21] Analytics Service (Tinybird): The core data platform. It ingests event data from the Ingestion API, stores it in ClickHouse, and exposes performant, read-only API endpoints (Pipes) that the frontend consumes to populate the dashboards and charts. 
 
@@ -53,16 +49,14 @@ The system will use a service-based architecture where the frontend application 
 ```mermaid
 flowchart TD
     subgraph "User's Browser"
-        User([User]) --> FrontendApp
+        User([User]) --> NextApp
     end
 
     subgraph "Cloud Platform (e.g., Vercel)"
-        style FrontendApp fill:#cde, stroke:#333
-        style IngestionAPI fill:#cde, stroke:#333
+        style NextApp fill:#cde, stroke:#333
         style ClusteringJob fill:#cde, stroke:#333
 
-        FrontendApp["Frontend Application <br/> (Next.js, TypeScript, shadcn)"]
-        IngestionAPI["Ingestion API <br/> (Hono, TypeScript)"]
+        NextApp["Next.js Application <br/> (UI & API Routes, TypeScript, shadcn)"]
         ClusteringJob["Semantic Clustering Job <br/> (TypeScript, Scheduled)"]
     end
 
@@ -76,14 +70,13 @@ flowchart TD
         VectorDB["Vector Database"]
     end
 
-    FrontendApp -- "1. Submits Search/Report (HTTPS/JSON)" --> IngestionAPI
-    IngestionAPI -- "2. Looks up IP" --> GeoIP
-    IngestionAPI -- "3. Ingests Enriched Event" --> Tinybird
-    FrontendApp -- "4. Fetches Analytics Data" --> Tinybird
+    NextApp -- "1. API Route looks up IP on submission" --> GeoIP
+    NextApp -- "2. API Route ingests enriched event" --> Tinybird
+    NextApp -- "3. UI Fetches Analytics Data" --> Tinybird
 
-    ClusteringJob -- "5. Reads recent reports" --> Tinybird
-    ClusteringJob -- "6. Generates embeddings & clusters" --> VectorDB
-    ClusteringJob -- "7. Writes cluster results" --> Tinybird
+    ClusteringJob -- "4. Reads recent reports" --> Tinybird
+    ClusteringJob -- "5. Generates embeddings & clusters" --> VectorDB
+    ClusteringJob -- "6. Writes cluster results" --> Tinybird
 ```
 
 ## [TRD-25] Data Architecture and Models
@@ -97,11 +90,7 @@ The data architecture is split between two main systems: Tinybird (ClickHouse) f
 [TRD-29] To maintain a minimal scope and simplify the architecture for this take-home assignment, the decision is to use ClickHouse's native vector search capabilities directly within Tinybird. This avoids the need for an additional external service, co-locates the data, and is sufficient for the project's requirements. 
 
 ### [TRD-30] Shared Data Models (TypeScript)
-These models will be defined in a shared 
-
-/packages/types
-
- directory within the monorepo to ensure consistency between the frontend and backend.
+These models will be defined in a shared directory within the src folder (e.g., src/lib/types) to ensure consistency between the frontend components and backend API routes.
 
 [TRD-31]
 ```typescript
@@ -224,19 +213,17 @@ classDiagram
         }
     }
 
-    namespace Backend {
-        class IngestionApiService {
-            <<Service>>
-            +handleEventRequest(request: Request): Response
-        }
-        class TinybirdClient {
-            <<Service>>
-            +ingest(event: any): Promise<void>
-        }
-        class ClusteringJob {
-            <<Scheduled Service>>
-            +run(): Promise<void>
-        }
+    class ApiRoutes {
+        <<Next.js API Routes>>
+        +handleEventRequest(request: Request): Response
+    }
+    class TinybirdClient {
+        <<Service>>
+        +ingest(event: any): Promise<void>
+    }
+    class ClusteringJob {
+        <<Scheduled Service>>
+        +run(): Promise<void>
     }
     
     namespace SharedModels {
@@ -261,14 +248,14 @@ classDiagram
     SearchPageComponent ..> ApiClient : uses
     ReportFormComponent ..> ApiClient : uses
     AnalyticsDashboardComponent ..> ApiClient : uses
-    ApiClient --|> IngestionApiService : sends requests to
-    IngestionApiService *-- TinybirdClient : uses
+    ApiClient --|> ApiRoutes : sends requests to
+    ApiRoutes *-- TinybirdClient : uses
     ClusteringJob *-- TinybirdClient : uses
 
     ApiClient ..> SearchEventModel
     ApiClient ..> DetailedReportModel
     ApiClient ..> AnalyticsData
-    IngestionApiService ..> SearchEventModel
+    ApiRoutes ..> SearchEventModel
 ```
 
 ## [TRD-36] User Interface / User Experience Key Requirements

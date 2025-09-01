@@ -45,8 +45,8 @@ export interface DetailedReport {
   session_id: string; 
   original_timestamp: string;
 
-  issue_category: 'hallucination' | 'memory' | 'reliability' | 'ui' | 'other';
-  severity: 'low' | 'medium' | 'high';
+  issue_category: string;
+  severity?: 'low' | 'medium' | 'high';
   product_context: string; // e.g., "Direct API", "Cursor"
   example_prompts?: string;
 }

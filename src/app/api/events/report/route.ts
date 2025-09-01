@@ -156,7 +156,7 @@ export async function POST(request: NextRequest) {
       ua_os: userAgentDetails.os || null,
       device_type: userAgentDetails.device_type,
       issue_category: detailedReport.issue_category,
-      severity: detailedReport.severity,
+      severity: detailedReport.severity || null,
       product_context: detailedReport.product_context,
       example_prompts: detailedReport.example_prompts || null
     };

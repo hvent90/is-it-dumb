@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from "react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Command,
   CommandInput,
@@ -15,9 +15,9 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Textarea } from "@/components/ui/textarea";
+
 import { Button } from "@/components/ui/button";
-import { Check, ChevronsUpDown, Loader2 } from "lucide-react";
+import { Check, ChevronsUpDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { apiClient, SearchSubmission } from "@/lib/api-client";
 
@@ -33,7 +33,7 @@ const modelOptions = [
     ],
   },
   {
-    label: "Anthropic", 
+    label: "Anthropic",
     models: [
       { value: "claude-3.5-sonnet", label: "Claude 3.5 Sonnet" },
       { value: "claude-3-opus", label: "Claude 3 Opus" },
@@ -69,15 +69,45 @@ const modelOptions = [
 ];
 
 interface ModelSearchInputProps {
-  onSubmitSuccess?: (eventId: string) => void;
+  onSubmitSuccess?: () => void;
   onSubmitError?: (error: string) => void;
+  onModelSelect?: (modelName: string) => void;
 }
 
-export function ModelSearchInput({ onSubmitSuccess, onSubmitError }: ModelSearchInputProps) {
+export function ModelSearchInput({ onSubmitSuccess, onSubmitError, onModelSelect }: ModelSearchInputProps) {
   const [open, setOpen] = useState(false);
-  const [selectedModel, setSelectedModel] = useState<string>("");
-  const [quickReportText, setQuickReportText] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [selectedModel, setSelectedModel] = useState<string>(() => {
+    // Restore selected model from sessionStorage on mount
+    if (typeof window !== 'undefined') {
+      return sessionStorage.getItem('last_search_model') || '';
+    }
+    return '';
+  });
+
+  // Sync with sessionStorage changes (e.g., when switching tabs)
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const handleStorageChange = () => {
+        const storedModel = sessionStorage.getItem('last_search_model') || '';
+        if (storedModel !== selectedModel) {
+          setSelectedModel(storedModel);
+        }
+      };
+
+      // Listen for storage events
+      window.addEventListener('storage', handleStorageChange);
+
+      // Also check on mount and when component becomes visible
+      const storedModel = sessionStorage.getItem('last_search_model') || '';
+      if (storedModel !== selectedModel) {
+        setSelectedModel(storedModel);
+      }
+
+      return () => {
+        window.removeEventListener('storage', handleStorageChange);
+      };
+    }
+  }, [selectedModel]);
 
   // Get the display label for selected model
   const selectedModelLabel = React.useMemo(() => {
@@ -88,33 +118,38 @@ export function ModelSearchInput({ onSubmitSuccess, onSubmitError }: ModelSearch
     return selectedModel || "Which model are you checking on?";
   }, [selectedModel]);
 
-  const handleSubmit = async () => {
-    if (!selectedModel) {
-      onSubmitError?.("Please select a model first");
-      return;
-    }
-
-    setIsSubmitting(true);
-
+  const submitSearchEvent = async (modelName: string, reportText?: string) => {
     try {
       const submission: SearchSubmission = {
-        model_name: selectedModel,
-        quick_report_text: quickReportText.trim() || undefined,
+        model_name: modelName,
+        quick_report_text: reportText?.trim() || undefined,
         entry_path: 'search_tab'
       };
 
       const result = await apiClient.submitSearchEvent(submission);
 
       if (result.success && result.event_id) {
-        onSubmitSuccess?.(result.event_id);
+        onSubmitSuccess?.();
         // Keep the selected model and report text for potential follow-up
       } else {
         onSubmitError?.(result.error || 'Failed to submit search event');
       }
     } catch (error) {
       onSubmitError?.('Network error occurred');
-    } finally {
-      setIsSubmitting(false);
+    }
+  };
+
+  const handleModelSelect = async (modelValue: string) => {
+    const newSelectedModel = modelValue === selectedModel ? "" : modelValue;
+    setSelectedModel(newSelectedModel);
+    setOpen(false);
+
+    // Call the model select callback with the new value (including empty string)
+    onModelSelect?.(newSelectedModel);
+
+    // Send event immediately when model is selected
+    if (newSelectedModel) {
+      await submitSearchEvent(newSelectedModel);
     }
   };
 
@@ -141,23 +176,20 @@ export function ModelSearchInput({ onSubmitSuccess, onSubmitError }: ModelSearch
               {modelOptions.map((group) => (
                 <CommandGroup key={group.label} heading={group.label}>
                   {group.models.map((model) => (
-                    <CommandItem
-                      key={model.value}
-                      value={model.value}
-                      onSelect={(currentValue) => {
-                        setSelectedModel(currentValue === selectedModel ? "" : currentValue);
-                        setOpen(false);
-                      }}
-                    >
-                      <Check
-                        className={cn(
-                          "mr-2 h-4 w-4",
-                          selectedModel === model.value ? "opacity-100" : "opacity-0"
-                        )}
-                      />
-                      {model.label}
-                    </CommandItem>
-                  ))}
+                     <CommandItem
+                       key={model.value}
+                       value={model.value}
+                       onSelect={handleModelSelect}
+                     >
+                       <Check
+                         className={cn(
+                           "mr-2 h-4 w-4",
+                           selectedModel === model.value ? "opacity-100" : "opacity-0"
+                         )}
+                       />
+                       {model.label}
+                     </CommandItem>
+                   ))}
                 </CommandGroup>
               ))}
             </CommandList>
@@ -165,26 +197,6 @@ export function ModelSearchInput({ onSubmitSuccess, onSubmitError }: ModelSearch
         </PopoverContent>
       </Popover>
 
-      {/* Quick Report Text Area */}
-      <div className="space-y-2">
-        <Textarea
-          placeholder="Optional: Briefly describe the issue..."
-          value={quickReportText}
-          onChange={(e) => setQuickReportText(e.target.value)}
-          className="min-h-[100px] resize-none"
-        />
-      </div>
-
-      {/* Submit Button */}
-      <Button 
-        onClick={handleSubmit}
-        disabled={!selectedModel || isSubmitting}
-        size="lg" 
-        className="w-full"
-      >
-        {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-        {isSubmitting ? 'Checking Model...' : 'Check Model'}
-      </Button>
-    </div>
-  );
-}
+     </div>
+    );
+  }
