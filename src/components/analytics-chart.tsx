@@ -20,7 +20,7 @@ export type ChartType = 'bar' | 'pie';
 interface ChartData {
   name: string;
   value: number;
-  [key: string]: any;
+  [key: string]: string | number | boolean | undefined;
 }
 
 interface AnalyticsChartProps {
@@ -87,12 +87,12 @@ export function AnalyticsChart({
         />
         <YAxis />
         <Tooltip />
-        <Bar
-          dataKey={dataKey}
-          fill={colors[0]}
-          onClick={onBarClick ? (data) => onBarClick(data as ChartData) : undefined}
-          cursor={onBarClick ? 'pointer' : 'default'}
-        />
+         <Bar
+           dataKey={dataKey}
+           fill={colors[0]}
+           onClick={onBarClick ? (data) => onBarClick(data.payload as ChartData) : undefined}
+           cursor={onBarClick ? 'pointer' : 'default'}
+         />
       </BarChart>
     </ResponsiveContainer>
   );

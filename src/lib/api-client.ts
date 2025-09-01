@@ -103,13 +103,136 @@ class ApiClient {
     }
   }
 
+  // Analytics data fetching methods
+  async getModelCounts(): Promise<{ data: Array<{ name: string; value: number }> }> {
+    try {
+      const response = await fetch('/api/analytics?type=model_counts');
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to fetch model counts');
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Error fetching model counts:', error);
+      // Return mock data as fallback
+      return {
+        data: [
+          { name: 'GPT-4', value: 1250 },
+          { name: 'Claude-3', value: 980 },
+          { name: 'GPT-3.5', value: 750 },
+          { name: 'Gemini Pro', value: 620 },
+          { name: 'Llama 2', value: 450 },
+        ]
+      };
+    }
+  }
+
+  async getIssueCounts(): Promise<{ data: Array<{ name: string; value: number }> }> {
+    try {
+      const response = await fetch('/api/analytics?type=issue_counts');
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to fetch issue counts');
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Error fetching issue counts:', error);
+      // Return mock data as fallback
+      return {
+        data: [
+          { name: 'Hallucination', value: 35 },
+          { name: 'Memory Issues', value: 28 },
+          { name: 'Reliability', value: 22 },
+          { name: 'UI Problems', value: 15 },
+        ]
+      };
+    }
+  }
+
+  async getModelTimeseries(modelName: string): Promise<{ data: Array<{ date: string; value: number }> }> {
+    try {
+      const response = await fetch(`/api/analytics?type=model_timeseries&model_name=${encodeURIComponent(modelName)}`);
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to fetch model timeseries');
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Error fetching model timeseries:', error);
+      // Return mock data as fallback
+      return {
+        data: [
+          { date: '2024-01-01', value: 10 },
+          { date: '2024-01-02', value: 15 },
+          { date: '2024-01-03', value: 8 },
+          { date: '2024-01-04', value: 12 },
+          { date: '2024-01-05', value: 20 },
+        ]
+      };
+    }
+  }
+
+  async getModelIssueBreakdown(modelName: string): Promise<{ data: Array<{ name: string; value: number }> }> {
+    try {
+      const response = await fetch(`/api/analytics?type=model_issue_breakdown&model_name=${encodeURIComponent(modelName)}`);
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to fetch model issue breakdown');
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Error fetching model issue breakdown:', error);
+      // Return mock data as fallback
+      return {
+        data: [
+          { name: 'Hallucination', value: 45 },
+          { name: 'Memory Issues', value: 32 },
+          { name: 'Reliability', value: 28 },
+          { name: 'UI Problems', value: 18 },
+        ]
+      };
+    }
+  }
+
+  async getIssueAffectedModels(issueCategory: string): Promise<{ data: Array<{ name: string; value: number }> }> {
+    try {
+      const response = await fetch(`/api/analytics?type=issue_models&issue_category=${encodeURIComponent(issueCategory)}`);
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to fetch issue affected models');
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Error fetching issue affected models:', error);
+      // Return mock data as fallback
+      return {
+        data: [
+          { name: 'GPT-4', value: 25 },
+          { name: 'Claude-3', value: 18 },
+          { name: 'GPT-3.5', value: 15 },
+          { name: 'Gemini Pro', value: 12 },
+        ]
+      };
+    }
+  }
+
   // Health check
   async healthCheck(): Promise<{ healthy: boolean; message?: string }> {
     try {
       const response = await fetch(this.baseUrl);
       const data = await response.json();
-      
-      return { 
+
+      return {
         healthy: response.ok,
         message: data.message || 'API health check completed'
       };

@@ -26,6 +26,7 @@ interface PathData {
     width: number;
     duration: number;
     delay: number;
+    isHighlighted?: boolean;
 }
 
 // Path generation function
@@ -41,9 +42,9 @@ function generateAestheticPath(
     const segments = type === "primary" ? 10 : type === "secondary" ? 8 : 6;
 
     const startX = 2400;
-    const startY = 800;
+    const startY = 800; // Same starting position for all paths
     const endX = -2400;
-    const endY = -800 + index * 25;
+    const endY = -800 + index * 25; // Same ending position for all paths
 
     for (let i = 0; i <= segments; i++) {
         const progress = i / segments;
@@ -89,10 +90,23 @@ const generateUniqueId = (prefix: string): string =>
 // Memoized FloatingPaths component
 export const FloatingPaths = memo(function FloatingPaths({
     position,
+    highlightedModel,
 }: {
     position: number;
+    highlightedModel?: string | null;
 }) {
-    // Increased number of paths while maintaining optimization
+    // Determine which path to highlight based on model name
+    const highlightedPathIndex = useMemo(() => {
+        if (!highlightedModel) return -1;
+        // Use model name to deterministically select a path
+        const hash = highlightedModel.split('').reduce((a, b) => {
+            a = ((a << 5) - a) + b.charCodeAt(0);
+            return a & a;
+        }, 0);
+        return Math.abs(hash) % 12; // Select from primary paths
+    }, [highlightedModel]);
+
+    // Generate paths once - don't regenerate on highlight changes
     const primaryPaths: PathData[] = useMemo(
         () =>
             Array.from({ length: 12 }, (_, i) => ({
@@ -102,8 +116,9 @@ export const FloatingPaths = memo(function FloatingPaths({
                 width: 4 + i * 0.3,
                 duration: 25,
                 delay: 0,
+                isHighlighted: false,
             })),
-        [position]
+        [position] // Only depend on position, not highlightedModel
     );
 
     const secondaryPaths: PathData[] = useMemo(
@@ -115,8 +130,9 @@ export const FloatingPaths = memo(function FloatingPaths({
                 width: 3 + i * 0.25,
                 duration: 20,
                 delay: 0,
+                isHighlighted: false,
             })),
-        [position]
+        [position] // Only depend on position
     );
 
     const accentPaths: PathData[] = useMemo(
@@ -128,8 +144,9 @@ export const FloatingPaths = memo(function FloatingPaths({
                 width: 2 + i * 0.2,
                 duration: 15,
                 delay: 0,
+                isHighlighted: false,
             })),
-        [position]
+        [position] // Only depend on position
     );
 
     // Shared animation configuration
@@ -151,51 +168,75 @@ export const FloatingPaths = memo(function FloatingPaths({
                 preserveAspectRatio="xMidYMid slice"
             >
                 <title>Background Paths</title>
-                <defs>
-                    <linearGradient
-                        id="sharedGradient"
-                        x1="0%"
-                        y1="0%"
-                        x2="100%"
-                        y2="0%"
-                    >
-                        <stop offset="0%" stopColor="rgba(147, 51, 234, 0.5)" />
-                        <stop
-                            offset="50%"
-                            stopColor="rgba(236, 72, 153, 0.5)"
-                        />
-                        <stop
-                            offset="100%"
-                            stopColor="rgba(59, 130, 246, 0.5)"
-                        />
-                    </linearGradient>
-                </defs>
+                 <defs>
+                     <linearGradient
+                         id="sharedGradient"
+                         x1="0%"
+                         y1="0%"
+                         x2="100%"
+                         y2="0%"
+                     >
+                         <stop offset="0%" stopColor="rgba(147, 51, 234, 0.5)" />
+                         <stop
+                             offset="50%"
+                             stopColor="rgba(236, 72, 153, 0.5)"
+                         />
+                         <stop
+                             offset="100%"
+                             stopColor="rgba(59, 130, 246, 0.5)"
+                         />
+                     </linearGradient>
+                     <linearGradient
+                         id="highlightedGradient"
+                         x1="0%"
+                         y1="0%"
+                         x2="100%"
+                         y2="0%"
+                     >
+                         <stop offset="0%" stopColor="rgba(34, 197, 94, 0.8)" />
+                         <stop
+                             offset="50%"
+                             stopColor="rgba(59, 130, 246, 0.8)"
+                         />
+                         <stop
+                             offset="100%"
+                             stopColor="rgba(168, 85, 247, 0.8)"
+                         />
+                     </linearGradient>
+                 </defs>
 
                 <g className="primary-waves">
-                    {primaryPaths.map((path) => (
-                        <motion.path
-                            key={path.id}
-                            d={path.d}
-                            stroke="url(#sharedGradient)"
-                            strokeWidth={path.width}
-                            strokeLinecap="round"
-                            initial={{ opacity: 0, scale: 0.8 }}
-                            animate={{
-                                ...sharedAnimationProps,
-                                y: [0, -15, 0],
-                            }}
-                            transition={{
-                                ...sharedAnimationProps.transition,
-                                y: {
-                                    duration: 8,
-                                    repeat: Number.POSITIVE_INFINITY,
-                                    ease: "easeInOut",
-                                    repeatType: "reverse",
-                                },
-                            }}
-                            style={{ opacity: path.opacity }}
-                        />
-                    ))}
+                    {primaryPaths.map((path, index) => {
+                        const isHighlighted = highlightedPathIndex === index;
+                        return (
+                            <motion.path
+                                key={path.id}
+                                d={path.d}
+                                stroke={isHighlighted ? "url(#highlightedGradient)" : "url(#sharedGradient)"}
+                                strokeWidth={isHighlighted ? 8 : path.width}
+                                strokeLinecap="round"
+                                initial={{ opacity: 0, scale: 0.8 }}
+                                animate={{
+                                    ...sharedAnimationProps,
+                                    y: [0, -15, 0],
+                                    opacity: isHighlighted ? 0.6 : (highlightedModel ? path.opacity * 0.7 : path.opacity),
+                                }}
+                                transition={{
+                                    ...sharedAnimationProps.transition,
+                                    y: {
+                                        duration: 8,
+                                        repeat: Number.POSITIVE_INFINITY,
+                                        ease: "easeInOut",
+                                        repeatType: "reverse",
+                                    },
+                                    opacity: {
+                                        duration: 0.3,
+                                        ease: "easeInOut",
+                                    },
+                                }}
+                            />
+                        );
+                    })}
                 </g>
 
                 <g className="secondary-waves" style={{ opacity: 0.8 }}>
@@ -210,6 +251,7 @@ export const FloatingPaths = memo(function FloatingPaths({
                             animate={{
                                 ...sharedAnimationProps,
                                 y: [0, -10, 0],
+                                opacity: highlightedModel ? path.opacity * 0.6 : path.opacity,
                             }}
                             transition={{
                                 ...sharedAnimationProps.transition,
@@ -219,8 +261,11 @@ export const FloatingPaths = memo(function FloatingPaths({
                                     ease: "easeInOut",
                                     repeatType: "reverse",
                                 },
+                                opacity: {
+                                    duration: 0.3,
+                                    ease: "easeInOut",
+                                },
                             }}
-                            style={{ opacity: path.opacity }}
                         />
                     ))}
                 </g>
@@ -237,6 +282,7 @@ export const FloatingPaths = memo(function FloatingPaths({
                             animate={{
                                 ...sharedAnimationProps,
                                 y: [0, -5, 0],
+                                opacity: highlightedModel ? path.opacity * 0.5 : path.opacity,
                             }}
                             transition={{
                                 ...sharedAnimationProps.transition,
@@ -246,8 +292,11 @@ export const FloatingPaths = memo(function FloatingPaths({
                                     ease: "easeInOut",
                                     repeatType: "reverse",
                                 },
+                                opacity: {
+                                    duration: 0.3,
+                                    ease: "easeInOut",
+                                },
                             }}
-                            style={{ opacity: path.opacity }}
                         />
                     ))}
                 </g>

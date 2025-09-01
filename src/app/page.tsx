@@ -42,6 +42,8 @@ export default function Home() {
     }
     // Show report form when model is selected, hide when deselected
     setShowReportForm(!!modelName);
+    // Set highlighted model for background animation
+    setHighlightedModel(modelName || null);
   };
 
   const handleSearchSuccess = () => {
@@ -147,10 +149,13 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-background relative overflow-hidden">
-      {/* Background Paths */}
-      <div className="absolute inset-0 pointer-events-none opacity-30">
-        <FloatingPaths position={1} />
-      </div>
+       {/* Background Paths */}
+       <div className="absolute inset-0 pointer-events-none opacity-30">
+         <FloatingPaths
+           position={1}
+           highlightedModel={highlightedModel}
+         />
+       </div>
 
       {/* Header */}
       <header className="border-b relative z-10">
