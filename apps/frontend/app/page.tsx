@@ -1,19 +1,46 @@
+'use client';
+
+import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Command,
-  CommandDialog,
-  CommandInput,
-  CommandItem,
-  CommandList,
-  CommandEmpty,
-  CommandGroup,
-} from "@/components/ui/command";
+import { ModelSearchInput } from "@/components/model-search-input";
+import { DetailedReportForm } from "@/components/detailed-report-form";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { CheckCircle, AlertCircle } from "lucide-react";
 
 export default function Home() {
+  const [searchSuccess, setSearchSuccess] = useState<string | null>(null);
+  const [searchError, setSearchError] = useState<string | null>(null);
+  const [reportSuccess, setReportSuccess] = useState<string | null>(null);
+  const [reportError, setReportError] = useState<string | null>(null);
+  const [showDetailedForm, setShowDetailedForm] = useState(false);
+
+  const handleSearchSuccess = (eventId: string) => {
+    setSearchSuccess(`Search event logged successfully! Event ID: ${eventId}`);
+    setSearchError(null);
+    setShowDetailedForm(true);
+    // Clear success message after 5 seconds
+    setTimeout(() => setSearchSuccess(null), 5000);
+  };
+
+  const handleSearchError = (error: string) => {
+    setSearchError(error);
+    setSearchSuccess(null);
+    setShowDetailedForm(false);
+  };
+
+  const handleReportSuccess = (reportId: string) => {
+    setReportSuccess(`Detailed report submitted successfully! Report ID: ${reportId}`);
+    setReportError(null);
+    // Clear success message after 5 seconds
+    setTimeout(() => setReportSuccess(null), 5000);
+  };
+
+  const handleReportError = (error: string) => {
+    setReportError(error);
+    setReportSuccess(null);
+  };
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -32,67 +59,58 @@ export default function Home() {
           </TabsList>
           
           <TabsContent value="search" className="mt-6">
-            <div className="max-w-2xl mx-auto space-y-6">
-              <Command className="rounded-lg border shadow-md">
-                <CommandInput placeholder="Which model are you checking on?" />
-                <CommandList>
-                  <CommandEmpty>No models found.</CommandEmpty>
-                  <CommandGroup heading="OpenAI">
-                    <CommandItem>
-                      <span className="ml-4 text-sm">GPT-4</span>
-                    </CommandItem>
-                    <CommandItem>
-                      <span className="ml-4 text-sm">GPT-4 Turbo</span>
-                    </CommandItem>
-                    <CommandItem>
-                      <span className="ml-4 text-sm">GPT-3.5 Turbo</span>
-                    </CommandItem>
-                    <CommandItem>
-                      <span className="ml-4 text-sm">ChatGPT</span>
-                    </CommandItem>
-                  </CommandGroup>
-                  <CommandGroup heading="Anthropic">
-                    <CommandItem>
-                      <span className="ml-4 text-sm">Claude 3.5 Sonnet</span>
-                    </CommandItem>
-                    <CommandItem>
-                      <span className="ml-4 text-sm">Claude 3 Opus</span>
-                    </CommandItem>
-                    <CommandItem>
-                      <span className="ml-4 text-sm">Claude 3 Haiku</span>
-                    </CommandItem>
-                  </CommandGroup>
-                  <CommandGroup heading="Google">
-                    <CommandItem>
-                      <span className="ml-4 text-sm">Gemini Pro</span>
-                    </CommandItem>
-                    <CommandItem>
-                      <span className="ml-4 text-sm">Gemini Ultra</span>
-                    </CommandItem>
-                    <CommandItem>
-                      <span className="ml-4 text-sm">PaLM 2</span>
-                    </CommandItem>
-                  </CommandGroup>
-                  <CommandGroup heading="Meta">
-                    <CommandItem>
-                      <span className="ml-4 text-sm">Llama 3.1</span>
-                    </CommandItem>
-                    <CommandItem>
-                      <span className="ml-4 text-sm">Llama 2</span>
-                    </CommandItem>
-                  </CommandGroup>
-                </CommandList>
-              </Command>
+            <div className="space-y-6">
+              {/* Success/Error Messages */}
+              {searchSuccess && (
+                <div className="max-w-2xl mx-auto">
+                  <Alert>
+                    <CheckCircle className="h-4 w-4" />
+                    <AlertDescription>{searchSuccess}</AlertDescription>
+                  </Alert>
+                </div>
+              )}
               
-              <div className="space-y-4">
-                <Textarea 
-                  placeholder="Optional: Briefly describe the issue..."
-                  className="min-h-[100px]"
+              {searchError && (
+                <div className="max-w-2xl mx-auto">
+                  <Alert variant="destructive">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription>{searchError}</AlertDescription>
+                  </Alert>
+                </div>
+              )}
+
+              {reportSuccess && (
+                <div className="max-w-2xl mx-auto">
+                  <Alert>
+                    <CheckCircle className="h-4 w-4" />
+                    <AlertDescription>{reportSuccess}</AlertDescription>
+                  </Alert>
+                </div>
+              )}
+              
+              {reportError && (
+                <div className="max-w-2xl mx-auto">
+                  <Alert variant="destructive">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription>{reportError}</AlertDescription>
+                  </Alert>
+                </div>
+              )}
+
+              {/* Model Search Input */}
+              <ModelSearchInput 
+                onSubmitSuccess={handleSearchSuccess}
+                onSubmitError={handleSearchError}
+              />
+
+              {/* Detailed Report Form */}
+              {showDetailedForm && (
+                <DetailedReportForm
+                  modelName={typeof window !== 'undefined' ? sessionStorage.getItem('last_search_model') || '' : ''}
+                  onSubmitSuccess={handleReportSuccess}
+                  onSubmitError={handleReportError}
                 />
-                <Button size="lg" className="w-full">
-                  Check Model
-                </Button>
-              </div>
+              )}
             </div>
           </TabsContent>
           
