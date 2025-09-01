@@ -18,6 +18,7 @@ export default function Home() {
   const [reportError, setReportError] = useState<string | null>(null);
   const [showReportForm, setShowReportForm] = useState(false);
   const [activeTab, setActiveTab] = useState("search");
+  const [highlightedModel, setHighlightedModel] = useState<string | null>(null);
 
   // Form state moved from DetailedReportForm
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -99,22 +100,29 @@ export default function Home() {
 
       const result = await apiClient.submitDetailedReport(submission);
 
-      if (result.success && result.report_id) {
-        setReportSuccess(`Detailed report submitted successfully! Report ID: ${result.report_id}`);
-        setReportError(null);
-        // Reset form after successful submission
-        setIssueCategory("");
-        setProductContext("");
-        setIsOtherContext(false);
-        setOtherContextText("");
-        setIsOtherIssue(false);
-        setOtherIssueText("");
-        setExamplePrompts("");
-        // Clear success message after 5 seconds
-        setTimeout(() => setReportSuccess(null), 5000);
-      } else {
-        setReportError(result.error || 'Failed to submit report');
-      }
+       if (result.success && result.report_id) {
+         setReportSuccess(`Detailed report submitted successfully! Report ID: ${result.report_id}`);
+         setReportError(null);
+
+         // Switch to trending tab and highlight the reported model
+         setActiveTab("trending");
+         setHighlightedModel(modelName);
+
+         // Reset form after successful submission
+         setIssueCategory("");
+         setProductContext("");
+         setIsOtherContext(false);
+         setOtherContextText("");
+         setIsOtherIssue(false);
+         setOtherIssueText("");
+         setExamplePrompts("");
+
+         // Clear success message and highlighted model after 10 seconds
+         setTimeout(() => {
+           setReportSuccess(null);
+           setHighlightedModel(null);
+         }, 10000);
+       }
     } catch {
       setReportError('Network error occurred');
     } finally {
@@ -231,7 +239,7 @@ export default function Home() {
             )}
 
              {activeTab === "trending" && (
-               <TrendingOverview />
+               <TrendingOverview highlightedModel={highlightedModel} />
              )}
           </div>
 

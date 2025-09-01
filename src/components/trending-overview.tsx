@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react';
 import { DashboardGrid } from './dashboard-grid';
 import { FilterControls, TimeRange, ModelFamily } from './filter-controls';
 import { AnalyticsChart } from './analytics-chart';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Info } from 'lucide-react';
 
 // Mock data for development - replace with actual API calls
 const mockModelData = [
@@ -14,6 +16,14 @@ const mockModelData = [
   { name: 'Llama 2', value: 450 },
 ];
 
+// Function to enhance data with highlighting
+const enhanceDataWithHighlighting = (data: any[], highlightedModel: string | null) => {
+  return data.map(item => ({
+    ...item,
+    isHighlighted: highlightedModel ? item.name === highlightedModel : false,
+  }));
+};
+
 const mockIssueData = [
   { name: 'Hallucination', value: 35 },
   { name: 'Memory Issues', value: 28 },
@@ -21,7 +31,11 @@ const mockIssueData = [
   { name: 'UI Problems', value: 15 },
 ];
 
-export function TrendingOverview() {
+interface TrendingOverviewProps {
+  highlightedModel?: string | null;
+}
+
+export function TrendingOverview({ highlightedModel }: TrendingOverviewProps) {
   const [timeRange, setTimeRange] = useState<TimeRange>('30d');
   const [modelFamily, setModelFamily] = useState<ModelFamily>('all');
   const [isLoading, setIsLoading] = useState(false);
@@ -36,7 +50,7 @@ export function TrendingOverview() {
 
     // In a real implementation, this would fetch data from Tinybird
     // For now, we'll just update with the same mock data
-    setModelData(mockModelData);
+    setModelData(enhanceDataWithHighlighting(mockModelData, highlightedModel || null));
     setIssueData(mockIssueData);
 
     setIsLoading(false);
@@ -45,6 +59,11 @@ export function TrendingOverview() {
   const handleModelClick = (data: any) => {
     // Navigate to model detail page
     console.log('Navigate to model:', data.name);
+
+    // Special handling for highlighted model
+    if (highlightedModel && data.name === highlightedModel) {
+      console.log('This is the model you just reported an issue for!');
+    }
   };
 
   const handleIssueClick = (data: any) => {
@@ -55,10 +74,20 @@ export function TrendingOverview() {
   // Load initial data
   useEffect(() => {
     handleApplyFilters();
-  }, []);
+  }, [highlightedModel]);
 
   return (
     <div className="space-y-6">
+      {highlightedModel && (
+        <Alert>
+          <Info className="h-4 w-4" />
+          <AlertDescription>
+            You just reported an issue for <strong>{highlightedModel}</strong>.
+            Here's how it compares to other models in our analytics.
+          </AlertDescription>
+        </Alert>
+      )}
+
       <FilterControls
         timeRange={timeRange}
         modelFamily={modelFamily}
