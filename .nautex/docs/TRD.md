@@ -1,6 +1,6 @@
 #  Technical Specification
 ## [TRD-1] System Overview
-This document provides the technical blueprint for "LLM Status Checker," a web application designed to track and aggregate user-reported issues with Large Language Models (LLMs). The vision is to create a service analogous to "downforeveryoneorjustme.com," but for the real-time, crowd-sourced performance and sentiment of LLMs.
+This document provides the technical blueprint for "Is It Dumb," a web application designed to track and aggregate user-reported issues with Large Language Models (LLMs). The vision is to create a service analogous to "downforeveryoneorjustme.com," but for the real-time, crowd-sourced performance and sentiment of LLMs.
 
 The technical solution consists of three main parts:
 
