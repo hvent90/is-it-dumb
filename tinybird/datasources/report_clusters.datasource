@@ -1,0 +1,10 @@
+SCHEMA >
+    `processed_at` DateTime64(3),
+    `cluster_id` String,
+    `cluster_summary` String,
+    `representative_texts` Array(String),
+    `report_count` Int32
+
+ENGINE "MergeTree"
+ENGINE_PARTITION_KEY "toYYYYMM(processed_at)"
+ENGINE_SORTING_KEY "processed_at, cluster_id"

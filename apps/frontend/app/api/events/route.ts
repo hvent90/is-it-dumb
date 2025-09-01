@@ -1,6 +1,117 @@
 import { Hono } from 'hono';
 import { handle } from 'hono/vercel';
-import { SearchEvent, DetailedReport } from '@is-it-dumb/types';
+import { SearchEvent, DetailedReport, Geolocation, UserAgentDetails } from '@is-it-dumb/types';
+import { UAParser } from 'ua-parser-js';
+
+// Flattened event structure for Tinybird ingestion
+interface TinybirdEvent {
+  session_id: string;
+  timestamp: string;
+  model_name: string;
+  event_type: 'search' | 'report';
+  entry_path: string;
+  quick_report_text: string | null;
+  geo_city: string | null;
+  geo_country: string | null;
+  ua_browser: string | null;
+  ua_os: string | null;
+  device_type: string;
+  issue_category: string | null;
+  severity: string | null;
+  product_context: string | null;
+  example_prompts: string | null;
+}
+
+// Helper function to get client IP address
+function getClientIP(request: Request): string {
+  const forwarded = request.headers.get('x-forwarded-for');
+  if (forwarded) {
+    return forwarded.split(',')[0].trim();
+  }
+  const realIP = request.headers.get('x-real-ip');
+  if (realIP) {
+    return realIP;
+  }
+  return 'unknown';
+}
+
+// Helper function to fetch GeoIP data using ip-api.com
+async function getGeoLocation(ip: string): Promise<Geolocation> {
+  if (ip === 'unknown' || ip.startsWith('127.') || ip.startsWith('192.168.') || ip.startsWith('10.')) {
+    return {
+      city: 'Unknown',
+      region: 'Unknown',
+      country: 'Unknown'
+    };
+  }
+
+  try {
+    const response = await fetch(`http://ip-api.com/json/${ip}?fields=city,regionName,country`);
+    if (!response.ok) {
+      throw new Error('GeoIP API failed');
+    }
+    
+    const data = await response.json();
+    return {
+      city: data.city || 'Unknown',
+      region: data.regionName || 'Unknown',
+      country: data.country || 'Unknown'
+    };
+  } catch (error) {
+    console.error('GeoIP lookup failed:', error);
+    return {
+      city: 'Unknown',
+      region: 'Unknown', 
+      country: 'Unknown'
+    };
+  }
+}
+
+// Helper function to parse User-Agent
+function parseUserAgent(userAgentString: string): UserAgentDetails {
+  const parser = new UAParser(userAgentString);
+  const result = parser.getResult();
+  
+  let deviceType: 'desktop' | 'mobile' | 'unknown' = 'unknown';
+  if (result.device.type === 'mobile' || result.device.type === 'tablet') {
+    deviceType = 'mobile';
+  } else if (result.device.type === undefined && result.os.name) {
+    deviceType = 'desktop';
+  }
+
+  return {
+    browser: result.browser.name || 'Unknown',
+    os: result.os.name || 'Unknown',
+    device_type: deviceType
+  };
+}
+
+// Helper function to send event to Tinybird
+async function sendToTinybird(event: TinybirdEvent): Promise<void> {
+  const token = process.env.TINYBIRD_API_TOKEN;
+  if (!token) {
+    console.warn('TINYBIRD_API_TOKEN not configured, event not sent to Tinybird');
+    return;
+  }
+
+  try {
+    const response = await fetch('https://api.tinybird.co/v0/events?name=llm_events', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(event)
+    });
+
+    if (!response.ok) {
+      throw new Error(`Tinybird API error: ${response.status}`);
+    }
+  } catch (error) {
+    console.error('Failed to send event to Tinybird:', error);
+    throw error;
+  }
+}
 
 // Create a Hono app
 const app = new Hono().basePath('/api/events');
@@ -38,27 +149,49 @@ app.post('/search', async (c) => {
       return c.json({ error: 'Missing required fields: model_name, session_id' }, 400);
     }
 
-    // Create search event with server-side enrichment
-    const searchEvent: Partial<SearchEvent> = {
-      ...body,
-      event_type: 'search',
+    // Extract IP and User-Agent
+    const clientIP = getClientIP(c.req.raw);
+    const userAgent = c.req.header('user-agent') || '';
+
+    // Perform enrichment
+    const [geoLocation, userAgentDetails] = await Promise.all([
+      getGeoLocation(clientIP),
+      Promise.resolve(parseUserAgent(userAgent))
+    ]);
+
+    // Create enriched search event
+    const searchEvent: SearchEvent = {
+      session_id: body.session_id,
       timestamp: new Date().toISOString(),
-      // TODO: Add GeoIP lookup
-      geo_location: {
-        city: 'Unknown',
-        region: 'Unknown',
-        country: 'Unknown'
-      },
-      // TODO: Parse User-Agent
-      user_agent_details: {
-        browser: 'Unknown',
-        os: 'Unknown',
-        device_type: 'unknown'
-      }
+      geo_location: geoLocation,
+      user_agent_details: userAgentDetails,
+      event_type: 'search',
+      model_name: body.model_name,
+      entry_path: body.entry_path || 'search_tab',
+      quick_report_text: body.quick_report_text || null
     };
 
-    // TODO: Forward to Tinybird for ingestion
-    console.log('Search event received:', searchEvent);
+    // Flatten for Tinybird ingestion
+    const flattenedEvent: TinybirdEvent = {
+      session_id: searchEvent.session_id,
+      timestamp: searchEvent.timestamp,
+      model_name: searchEvent.model_name,
+      event_type: searchEvent.event_type,
+      entry_path: searchEvent.entry_path,
+      quick_report_text: searchEvent.quick_report_text || null,
+      geo_city: searchEvent.geo_location.city || null,
+      geo_country: searchEvent.geo_location.country || null,
+      ua_browser: searchEvent.user_agent_details.browser || null,
+      ua_os: searchEvent.user_agent_details.os || null,
+      device_type: searchEvent.user_agent_details.device_type,
+      issue_category: null,
+      severity: null,
+      product_context: null,
+      example_prompts: null
+    };
+
+    // Send to Tinybird
+    await sendToTinybird(flattenedEvent);
     
     return c.json({ 
       success: true, 
@@ -84,6 +217,16 @@ app.post('/report', async (c) => {
       }, 400);
     }
 
+    // Extract IP and User-Agent
+    const clientIP = getClientIP(c.req.raw);
+    const userAgent = c.req.header('user-agent') || '';
+
+    // Perform enrichment
+    const [geoLocation, userAgentDetails] = await Promise.all([
+      getGeoLocation(clientIP),
+      Promise.resolve(parseUserAgent(userAgent))
+    ]);
+
     const detailedReport: DetailedReport = {
       session_id: body.session_id,
       original_timestamp: body.original_timestamp,
@@ -93,8 +236,27 @@ app.post('/report', async (c) => {
       example_prompts: body.example_prompts
     };
 
-    // TODO: Forward to Tinybird for ingestion
-    console.log('Detailed report received:', detailedReport);
+    // Flatten for Tinybird ingestion (as a report event)
+    const flattenedEvent: TinybirdEvent = {
+      session_id: detailedReport.session_id,
+      timestamp: new Date().toISOString(),
+      model_name: body.model_name || 'Unknown', // Should be provided or looked up
+      event_type: 'report',
+      entry_path: 'search_tab', // Reports typically come from search tab
+      quick_report_text: null,
+      geo_city: geoLocation.city || null,
+      geo_country: geoLocation.country || null,
+      ua_browser: userAgentDetails.browser || null,
+      ua_os: userAgentDetails.os || null,
+      device_type: userAgentDetails.device_type,
+      issue_category: detailedReport.issue_category,
+      severity: detailedReport.severity,
+      product_context: detailedReport.product_context,
+      example_prompts: detailedReport.example_prompts || null
+    };
+
+    // Send to Tinybird
+    await sendToTinybird(flattenedEvent);
     
     return c.json({ 
       success: true, 

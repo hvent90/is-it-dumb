@@ -1,0 +1,20 @@
+SCHEMA >
+    `session_id` String,
+    `timestamp` DateTime64(3),
+    `model_name` String,
+    `event_type` String,
+    `entry_path` String,
+    `quick_report_text` Nullable(String),
+    `geo_city` Nullable(String),
+    `geo_country` Nullable(String),
+    `ua_browser` Nullable(String),
+    `ua_os` Nullable(String),
+    `device_type` String,
+    `issue_category` Nullable(String),
+    `severity` Nullable(String),
+    `product_context` Nullable(String),
+    `example_prompts` Nullable(String)
+
+ENGINE "MergeTree"
+ENGINE_PARTITION_KEY "toYYYYMM(timestamp)"
+ENGINE_SORTING_KEY "timestamp, model_name"
