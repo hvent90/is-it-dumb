@@ -238,6 +238,40 @@ class ApiClient {
     }
   }
 
+  async getRecentClusters(): Promise<{ data: Array<{ cluster_id: string; cluster_summary: string; report_count: number; representative_texts: string[]; processed_at: string }> }> {
+    try {
+      const response = await fetch(`/api/analytics?type=recent_clusters`);
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to fetch recent clusters');
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Error fetching recent clusters:', error);
+      // Return mock data as fallback
+      return {
+        data: [
+          {
+            cluster_id: 'cluster_001',
+            cluster_summary: 'Issues related to: hallucination, reliability (5 reports)',
+            report_count: 5,
+            representative_texts: ['Model keeps making up facts', 'Unreliable responses with incorrect information'],
+            processed_at: new Date().toISOString()
+          },
+          {
+            cluster_id: 'cluster_002',
+            cluster_summary: 'Issues related to: memory, context (3 reports)',
+            report_count: 3,
+            representative_texts: ['Loses track of conversation', 'Forgets previous context'],
+            processed_at: new Date().toISOString()
+          }
+        ]
+      };
+    }
+  }
+
   // Health check
   async healthCheck(): Promise<{ healthy: boolean; message?: string }> {
     try {

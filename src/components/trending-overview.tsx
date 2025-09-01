@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { DashboardGrid } from './dashboard-grid';
 import { FilterControls, TimeRange, ModelFamily } from './filter-controls';
 import { AnalyticsChart } from './analytics-chart';
+import { RecentClusters } from './recent-clusters';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Info } from 'lucide-react';
 import { apiClient } from '@/lib/api-client';
@@ -120,14 +121,7 @@ export function TrendingOverview({ highlightedModel }: TrendingOverviewProps) {
         />
 
         <div className="md:col-span-2 lg:col-span-3">
-          <AnalyticsChart
-            title="Recent Trending Issues"
-            data={issueData.slice(0, 3)}
-            type="bar"
-            height={300}
-            onBarClick={handleIssueClick}
-            isLoading={isLoading}
-          />
+          <RecentClusters isLoading={isLoading} />
         </div>
 
         <div className="md:col-span-2">

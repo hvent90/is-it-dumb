@@ -1,0 +1,17 @@
+DESCRIPTION >
+    Recent clusters from the last 24 hours, ordered by processing time and report count.
+
+NODE clusters_data
+SQL >
+    SELECT
+        cluster_id,
+        cluster_summary,
+        report_count,
+        representative_texts,
+        processed_at
+    FROM report_clusters
+    WHERE processed_at >= now() - INTERVAL 24 HOUR
+    ORDER BY processed_at DESC, report_count DESC
+    LIMIT 10
+
+TYPE endpoint

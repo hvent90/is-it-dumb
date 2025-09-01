@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { DetailedReport, Geolocation, UserAgentDetails } from '@/types';
 import { UAParser } from 'ua-parser-js';
+import { pipeline } from '@xenova/transformers';
 
 // Flattened event structure for Tinybird ingestion
 interface TinybirdEvent {
@@ -10,6 +11,7 @@ interface TinybirdEvent {
   event_type: 'search' | 'report';
   entry_path: string;
   quick_report_text: string | null;
+  embedding: number[] | null;
   geo_city: string | null;
   geo_country: string | null;
   ua_browser: string | null;
@@ -85,6 +87,28 @@ function parseUserAgent(userAgentString: string): UserAgentDetails {
   };
 }
 
+// Global variable to cache the embedding model
+let embeddingModel: any = null;
+
+// Helper function to generate embeddings locally
+async function generateEmbedding(text: string): Promise<number[]> {
+  try {
+    // Initialize the model if not already loaded
+    if (!embeddingModel) {
+      console.log('Loading local embedding model...');
+      embeddingModel = await pipeline('feature-extraction', 'Xenova/all-MiniLM-L6-v2');
+      console.log('Embedding model loaded successfully');
+    }
+
+    // Generate embedding
+    const output = await embeddingModel(text, { pooling: 'mean', normalize: true });
+    return Array.from(output.data);
+  } catch (error) {
+    console.error('Error generating embedding:', error);
+    return [];
+  }
+}
+
 // Helper function to send event to Tinybird
 async function sendToTinybird(event: TinybirdEvent): Promise<void> {
   const token = process.env.TINYBIRD_API_TOKEN;
@@ -143,6 +167,14 @@ export async function POST(request: NextRequest) {
       example_prompts: body.example_prompts
     };
 
+    // Generate embedding if quick_report_text is provided
+    let embedding: number[] | null = null;
+    if (body.quick_report_text && typeof body.quick_report_text === 'string') {
+      console.log('Generating embedding for quick report text...');
+      embedding = await generateEmbedding(body.quick_report_text);
+      console.log(`Generated embedding with ${embedding.length} dimensions`);
+    }
+
     // Flatten for Tinybird ingestion (as a report event)
     const flattenedEvent: TinybirdEvent = {
       session_id: detailedReport.session_id,
@@ -150,7 +182,8 @@ export async function POST(request: NextRequest) {
       model_name: detailedReport.model_name,
       event_type: 'report',
       entry_path: 'search_tab', // Reports typically come from search tab
-      quick_report_text: null,
+      quick_report_text: body.quick_report_text || null,
+      embedding: embedding,
       geo_city: geoLocation.city || null,
       geo_country: geoLocation.country || null,
       ua_browser: userAgentDetails.browser || null,

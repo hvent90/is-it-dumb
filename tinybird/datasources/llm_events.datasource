@@ -5,6 +5,7 @@ SCHEMA >
     `event_type` String,
     `entry_path` String,
     `quick_report_text` Nullable(String),
+    `embedding` Array(Float32) DEFAULT [],
     `geo_city` Nullable(String),
     `geo_country` Nullable(String),
     `ua_browser` Nullable(String),
@@ -18,3 +19,22 @@ SCHEMA >
 ENGINE "MergeTree"
 ENGINE_PARTITION_KEY "toYYYYMM(timestamp)"
 ENGINE_SORTING_KEY "timestamp, model_name"
+
+FORWARD_QUERY >
+  SELECT
+    session_id,
+    timestamp,
+    model_name,
+    event_type,
+    entry_path,
+    quick_report_text,
+    defaultValueOfTypeName('Array(Float32)') AS embedding,
+    geo_city,
+    geo_country,
+    ua_browser,
+    ua_os,
+    device_type,
+    issue_category,
+    severity,
+    product_context,
+    example_prompts

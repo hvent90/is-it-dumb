@@ -102,6 +102,18 @@ export async function GET(request: NextRequest) {
           })) || []
         });
 
+      case 'recent_clusters':
+        const clustersData = await callTinybirdPipe('recent_clusters');
+        return NextResponse.json({
+          data: clustersData.data?.map((item: { cluster_id: string; cluster_summary: string; report_count: number; representative_texts: string[]; processed_at: string }) => ({
+            cluster_id: item.cluster_id,
+            cluster_summary: item.cluster_summary,
+            report_count: item.report_count,
+            representative_texts: item.representative_texts,
+            processed_at: item.processed_at,
+          })) || []
+        });
+
       default:
         return NextResponse.json({ error: 'Invalid type parameter' }, { status: 400 });
     }
