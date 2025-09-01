@@ -55,7 +55,7 @@ describe('Ingestion Pipeline Integration', () => {
     });
 
     // Import the route handler dynamically to avoid top-level imports
-    const { POST } = await import('../../app/api/events/route');
+    const { POST } = await import('../../app/api/events/search/route');
     
     // Execute the request
     const response = await POST(mockRequest);
@@ -136,7 +136,7 @@ describe('Ingestion Pipeline Integration', () => {
       })
     });
 
-    const { POST } = await import('../../app/api/events/route');
+    const { POST } = await import('../../app/api/events/search/route');
     const response = await POST(mockRequest);
     const responseData = await response.json();
 
@@ -144,7 +144,7 @@ describe('Ingestion Pipeline Integration', () => {
     expect(responseData.success).toBe(true);
 
     // Verify that even with GeoIP failure, the event was still sent to Tinybird with fallback data
-    const tinybirdCall = mockFetch.mock.calls.find(call => 
+    const tinybirdCall = mockFetch.mock.calls.find(call =>
       call[0] === 'https://api.tinybird.co/v0/events?name=llm_events'
     );
     
@@ -197,7 +197,7 @@ describe('Ingestion Pipeline Integration', () => {
       })
     });
 
-    const { POST } = await import('../../app/api/events/route');
+    const { POST } = await import('../../app/api/events/report/route');
     const response = await POST(mockRequest);
     const responseData = await response.json();
 
@@ -241,7 +241,7 @@ describe('Ingestion Pipeline Integration', () => {
       })
     });
 
-    const { POST } = await import('../../app/api/events/route');
+    const { POST } = await import('../../app/api/events/search/route');
     const response = await POST(mockRequest);
     const responseData = await response.json();
 

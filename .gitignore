@@ -32,3 +32,6 @@ Thumbs.db
 
 # Tinybird CLI configuration
 .tinyb*
+
+# Claude Code Helpers
+thoughts/

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { DetailedReport, Geolocation, UserAgentDetails } from '@is-it-dumb/types';
+import { SearchEvent, Geolocation, UserAgentDetails } from '@/types';
 import { UAParser } from 'ua-parser-js';
 
 // Flattened event structure for Tinybird ingestion
@@ -117,10 +117,8 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     
     // Basic validation
-    if (!body.session_id || !body.original_timestamp || !body.issue_category) {
-      return NextResponse.json({ 
-        error: 'Missing required fields: session_id, original_timestamp, issue_category' 
-      }, { status: 400 });
+    if (!body.model_name || !body.session_id) {
+      return NextResponse.json({ error: 'Missing required fields: model_name, session_id' }, { status: 400 });
     }
 
     // Extract IP and User-Agent
@@ -133,32 +131,35 @@ export async function POST(request: NextRequest) {
       Promise.resolve(parseUserAgent(userAgent))
     ]);
 
-    const detailedReport: DetailedReport = {
+    // Create enriched search event
+    const searchEvent: SearchEvent = {
       session_id: body.session_id,
-      original_timestamp: body.original_timestamp,
-      issue_category: body.issue_category,
-      severity: body.severity || 'medium',
-      product_context: body.product_context || 'Unknown',
-      example_prompts: body.example_prompts
+      timestamp: new Date().toISOString(),
+      geo_location: geoLocation,
+      user_agent_details: userAgentDetails,
+      event_type: 'search',
+      model_name: body.model_name,
+      entry_path: body.entry_path || 'search_tab',
+      quick_report_text: body.quick_report_text || null
     };
 
-    // Flatten for Tinybird ingestion (as a report event)
+    // Flatten for Tinybird ingestion
     const flattenedEvent: TinybirdEvent = {
-      session_id: detailedReport.session_id,
-      timestamp: new Date().toISOString(),
-      model_name: body.model_name || 'Unknown', // Should be provided or looked up
-      event_type: 'report',
-      entry_path: 'search_tab', // Reports typically come from search tab
-      quick_report_text: null,
-      geo_city: geoLocation.city || null,
-      geo_country: geoLocation.country || null,
-      ua_browser: userAgentDetails.browser || null,
-      ua_os: userAgentDetails.os || null,
-      device_type: userAgentDetails.device_type,
-      issue_category: detailedReport.issue_category,
-      severity: detailedReport.severity,
-      product_context: detailedReport.product_context,
-      example_prompts: detailedReport.example_prompts || null
+      session_id: searchEvent.session_id,
+      timestamp: searchEvent.timestamp,
+      model_name: searchEvent.model_name,
+      event_type: searchEvent.event_type,
+      entry_path: searchEvent.entry_path,
+      quick_report_text: searchEvent.quick_report_text || null,
+      geo_city: searchEvent.geo_location.city || null,
+      geo_country: searchEvent.geo_location.country || null,
+      ua_browser: searchEvent.user_agent_details.browser || null,
+      ua_os: searchEvent.user_agent_details.os || null,
+      device_type: searchEvent.user_agent_details.device_type,
+      issue_category: null,
+      severity: null,
+      product_context: null,
+      example_prompts: null
     };
 
     // Send to Tinybird
@@ -166,12 +167,12 @@ export async function POST(request: NextRequest) {
     
     return NextResponse.json({ 
       success: true, 
-      message: 'Detailed report submitted successfully',
-      report_id: `report_${Date.now()}`
+      message: 'Search event logged successfully',
+      event_id: `search_${Date.now()}`
     });
     
   } catch (error) {
-    console.error('Error processing detailed report:', error);
+    console.error('Error processing search event:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

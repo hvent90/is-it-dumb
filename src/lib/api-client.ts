@@ -1,4 +1,4 @@
-import { DetailedReport } from '@is-it-dumb/types';
+import { DetailedReport } from '@/types';
 
 // Frontend-friendly interface for search submission
 export interface SearchSubmission {
