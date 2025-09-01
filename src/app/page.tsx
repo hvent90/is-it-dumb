@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+
 
 import { ModelSearchInput } from "@/components/model-search-input";
 import { ReportForm } from "@/components/report-form";
@@ -10,6 +10,7 @@ import { CheckCircle, AlertCircle } from "lucide-react";
 import SmoothTab from "@/components/kokonutui/smooth-tab";
 import { DetailedReportSubmission } from "@/lib/api-client";
 import { FloatingPaths } from "@/components/kokonutui/background-paths";
+import { TrendingOverview } from "@/components/trending-overview";
 
 export default function Home() {
   const [searchError, setSearchError] = useState<string | null>(null);
@@ -229,36 +230,9 @@ export default function Home() {
               </>
             )}
 
-            {activeTab === "trending" && (
-              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Top Reported Models</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-muted-foreground">Analytics dashboard coming soon...</p>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Issue Distribution</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-muted-foreground">Charts coming soon...</p>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Recent Trending Issues</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-muted-foreground">Clustering analysis coming soon...</p>
-                  </CardContent>
-                </Card>
-              </div>
-            )}
+             {activeTab === "trending" && (
+               <TrendingOverview />
+             )}
           </div>
 
         </div>
