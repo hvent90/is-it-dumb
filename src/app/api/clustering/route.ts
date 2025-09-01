@@ -52,14 +52,15 @@ function createClusterSummary(texts: string[]): string {
 
 // Helper function to send cluster data to Tinybird
 async function sendClustersToTinybird(clusters: any[]): Promise<void> {
-  const token = process.env.TINYBIRD_API_TOKEN;
+  const token = process.env.TINYBIRD_TOKEN;
   if (!token) {
     console.warn('TINYBIRD_API_TOKEN not configured, clusters not sent to Tinybird');
     return;
   }
 
   try {
-    const response = await fetch('https://api.tinybird.co/v0/events?name=report_clusters', {
+    const baseUrl = process.env.TINYBIRD_BASE_URL || 'https://api.tinybird.co';
+    const response = await fetch(`${baseUrl}/v0/events?name=report_clusters`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -84,7 +85,7 @@ export async function GET() {
     console.log('Starting clustering process...');
 
     // Fetch recent events with embeddings from Tinybird
-    const token = process.env.TINYBIRD_API_TOKEN;
+    const token = process.env.TINYBIRD_TOKEN;
     if (!token) {
       return NextResponse.json({
         error: 'TINYBIRD_API_TOKEN not configured'
@@ -109,7 +110,8 @@ export async function GET() {
       LIMIT 1000
     `;
 
-    const response = await fetch(`https://api.tinybird.co/v0/sql?q=${encodeURIComponent(query)}`, {
+    const baseUrl = process.env.TINYBIRD_BASE_URL || 'https://api.tinybird.co';
+    const response = await fetch(`${baseUrl}/v0/sql?q=${encodeURIComponent(query)}`, {
       headers: {
         'Authorization': `Bearer ${token}`
       }

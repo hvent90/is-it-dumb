@@ -111,14 +111,15 @@ async function generateEmbedding(text: string): Promise<number[]> {
 
 // Helper function to send event to Tinybird
 async function sendToTinybird(event: TinybirdEvent): Promise<void> {
-  const token = process.env.TINYBIRD_API_TOKEN;
+  const token = process.env.TINYBIRD_TOKEN;
   if (!token) {
     console.warn('TINYBIRD_API_TOKEN not configured, event not sent to Tinybird');
     return;
   }
 
   try {
-    const response = await fetch('https://api.tinybird.co/v0/events?name=llm_events', {
+    const baseUrl = process.env.TINYBIRD_BASE_URL || 'https://api.tinybird.co';
+    const response = await fetch(`${baseUrl}/v0/events?name=llm_events`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -128,7 +129,10 @@ async function sendToTinybird(event: TinybirdEvent): Promise<void> {
     });
 
     if (!response.ok) {
-      throw new Error(`Tinybird API error: ${response.status}`);
+      const errorText = await response.text().catch(() => 'Unknown error');
+      console.error(`Tinybird API error: ${response.status} ${response.statusText} - ${errorText}`);
+      console.error('Event data sent:', JSON.stringify(event, null, 2));
+      throw new Error(`Tinybird API error: ${response.status} ${response.statusText} - ${errorText}`);
     }
   } catch (error) {
     console.error('Failed to send event to Tinybird:', error);
@@ -197,6 +201,10 @@ export async function POST(request: NextRequest) {
 
     // Send to Tinybird
     await sendToTinybird(flattenedEvent);
+
+    // Trigger clustering asynchronously (don't await to avoid blocking the response)
+    fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/clustering`)
+      .catch(error => console.error('Background clustering failed:', error));
     
     return NextResponse.json({ 
       success: true, 

@@ -1,20 +1,20 @@
 SCHEMA >
-    `session_id` String,
-    `timestamp` DateTime64(3),
-    `model_name` String,
-    `event_type` String,
-    `entry_path` String,
-    `quick_report_text` Nullable(String),
-    `embedding` Array(Float32) DEFAULT [],
-    `geo_city` Nullable(String),
-    `geo_country` Nullable(String),
-    `ua_browser` Nullable(String),
-    `ua_os` Nullable(String),
-    `device_type` String,
-    `issue_category` Nullable(String),
-    `severity` Nullable(String),
-    `product_context` Nullable(String),
-    `example_prompts` Nullable(String)
+    `session_id` String `json:$.session_id`,
+    `timestamp` DateTime64(3) `json:$.timestamp`,
+    `model_name` String `json:$.model_name`,
+    `event_type` String `json:$.event_type`,
+    `entry_path` String `json:$.entry_path`,
+    `quick_report_text` Nullable(String) `json:$.quick_report_text`,
+    `embedding` Array(Float32) `json:$.embedding[:]` DEFAULT [],
+    `geo_city` Nullable(String) `json:$.geo_city`,
+    `geo_country` Nullable(String) `json:$.geo_country`,
+    `ua_browser` Nullable(String) `json:$.ua_browser`,
+    `ua_os` Nullable(String) `json:$.ua_os`,
+    `device_type` String `json:$.device_type`,
+    `issue_category` Nullable(String) `json:$.issue_category`,
+    `severity` Nullable(String) `json:$.severity`,
+    `product_context` Nullable(String) `json:$.product_context`,
+    `example_prompts` Nullable(String) `json:$.example_prompts`
 
 ENGINE "MergeTree"
 ENGINE_PARTITION_KEY "toYYYYMM(timestamp)"

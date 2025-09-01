@@ -1,9 +1,9 @@
 SCHEMA >
-    `processed_at` DateTime64(3),
-    `cluster_id` String,
-    `cluster_summary` String,
-    `representative_texts` Array(String),
-    `report_count` Int32
+    `processed_at` DateTime64(3) `json:$.processed_at`,
+    `cluster_id` String `json:$.cluster_id`,
+    `cluster_summary` String `json:$.cluster_summary`,
+    `representative_texts` Array(String) `json:$.representative_texts[:]`,
+    `report_count` Int32 `json:$.report_count`
 
 ENGINE "MergeTree"
 ENGINE_PARTITION_KEY "toYYYYMM(processed_at)"
