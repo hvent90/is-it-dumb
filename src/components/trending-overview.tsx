@@ -70,6 +70,7 @@ export function TrendingOverview({ highlightedModel }: TrendingOverviewProps) {
     } finally {
       setIsLoading(false);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [timeRange, modelFamily, highlightedModel, dataSource]);
 
   const handleModelClick = (data: { name: string; value: number; isHighlighted?: boolean }) => {
@@ -128,7 +129,7 @@ export function TrendingOverview({ highlightedModel }: TrendingOverviewProps) {
       <div className="w-full">
         <AnalyticsChart
           title="Models Issue Reports Over Time"
-          data={timeseriesData as any}
+          data={timeseriesData}
           type="area"
           nameKey="date"
           height={400}
@@ -167,7 +168,7 @@ export function TrendingOverview({ highlightedModel }: TrendingOverviewProps) {
       <div className="w-full">
         <AnalyticsChart
           title="Model Evals"
-          data={qualityData as any}
+          data={qualityData}
           type="line"
           nameKey="date"
           height={350}

@@ -95,6 +95,7 @@ export function RecentClusters({ isLoading = false }: RecentClustersProps) {
     };
 
     fetchClusters();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dataSource]); // Re-run when data source changes
 
   if (loading || isLoading) {

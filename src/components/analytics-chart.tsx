@@ -30,7 +30,7 @@ interface ChartData {
 
 interface AnalyticsChartProps {
   title: string;
-  data: ChartData[];
+  data: ChartData[] | Record<string, string | number>[];
   type: ChartType;
   dataKey?: string;
   nameKey?: string;
@@ -175,7 +175,6 @@ export function AnalyticsChart({
               stackId="1"
               stroke={colors[index % colors.length]}
               fill={colors[index % colors.length]}
-              onClick={onAreaClick ? (data) => onAreaClick(data.payload as ChartData) : undefined}
               cursor={onAreaClick ? 'pointer' : 'default'}
             />
           ))
@@ -185,7 +184,6 @@ export function AnalyticsChart({
             dataKey={dataKey}
             stroke={colors[0]}
             fill={colors[0]}
-            onClick={onAreaClick ? (data) => onAreaClick(data.payload as ChartData) : undefined}
             cursor={onAreaClick ? 'pointer' : 'default'}
           />
         )}
@@ -232,7 +230,6 @@ export function AnalyticsChart({
               strokeWidth={2}
               dot={{ r: 3 }}
               activeDot={{ r: 5 }}
-              onClick={onLineClick ? (data) => onLineClick(data.payload as ChartData) : undefined}
               cursor={onLineClick ? 'pointer' : 'default'}
             />
           ))
@@ -244,7 +241,6 @@ export function AnalyticsChart({
             strokeWidth={2}
             dot={{ r: 3 }}
             activeDot={{ r: 5 }}
-            onClick={onLineClick ? (data) => onLineClick(data.payload as ChartData) : undefined}
             cursor={onLineClick ? 'pointer' : 'default'}
           />
         )}

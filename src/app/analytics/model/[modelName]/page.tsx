@@ -57,6 +57,7 @@ export default function ModelDetailPage() {
     if (modelName) {
       fetchData();
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [modelName, dataSource]); // Re-run when data source changes
 
   const handleBackClick = () => {

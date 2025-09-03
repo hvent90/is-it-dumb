@@ -39,6 +39,7 @@ export default function IssueDetailPage() {
     if (issueCategory) {
       fetchData();
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [issueCategory, dataSource]); // Re-run when data source changes
 
   const handleBackClick = () => {

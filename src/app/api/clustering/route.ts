@@ -50,8 +50,16 @@ function createClusterSummary(texts: string[]): string {
   return summary;
 }
 
+interface ClusterData {
+  processed_at: string;
+  cluster_id: string;
+  cluster_summary: string;
+  representative_texts: string[];
+  report_count: number;
+}
+
 // Helper function to send cluster data to Tinybird
-async function sendClustersToTinybird(clusters: any[]): Promise<void> {
+async function sendClustersToTinybird(clusters: ClusterData[]): Promise<void> {
   const token = process.env.TINYBIRD_TOKEN;
   if (!token) {
     console.warn('TINYBIRD_API_TOKEN not configured, clusters not sent to Tinybird');
@@ -112,6 +120,7 @@ export async function GET() {
       LIMIT 1000
     `;
 
+    const baseUrl = process.env.TINYBIRD_BASE_URL || 'https://api.tinybird.co';
     const response = await fetch(`${baseUrl}/v0/sql?q=${encodeURIComponent(query)}`, {
       headers: {
         'Authorization': `Bearer ${token}`
@@ -171,14 +180,22 @@ export async function GET() {
       });
     }
 
+interface EventData {
+  session_id: string;
+  timestamp: string;
+  model_name: string;
+  quick_report_text: string;
+  embedding: number[];
+}
+
     // Perform clustering using simple similarity-based approach
-    const clusters: Record<string, any[]> = {};
+    const clusters: Record<string, EventData[]> = {};
     const processedEvents = new Set<string>();
 
     for (const event of events) {
       if (processedEvents.has(event.session_id)) continue;
 
-      const similarEvents: any[] = [event];
+      const similarEvents: EventData[] = [event];
       processedEvents.add(event.session_id);
 
       // Find similar events
@@ -206,7 +223,7 @@ export async function GET() {
 
     // Prepare cluster data for Tinybird
     const clusterData = Object.entries(clusters).map(([clusterId, clusterEvents]) => {
-      const texts = clusterEvents.map((e: any) => e.quick_report_text).filter(Boolean);
+      const texts = clusterEvents.map((e: EventData) => e.quick_report_text).filter(Boolean);
       const summary = createClusterSummary(texts);
 
       return {

@@ -88,6 +88,7 @@ function parseUserAgent(userAgentString: string): UserAgentDetails {
 }
 
 // Global variable to cache the embedding model
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 let embeddingModel: any = null;
 
 // Helper function to generate embeddings locally
@@ -96,7 +97,8 @@ async function generateEmbedding(text: string): Promise<number[]> {
     // Initialize the model if not already loaded
     if (!embeddingModel) {
       console.log('Loading local embedding model...');
-      embeddingModel = await pipeline('feature-extraction', 'Xenova/all-MiniLM-L6-v2');
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      embeddingModel = await pipeline('feature-extraction', 'Xenova/all-MiniLM-L6-v2') as any;
       console.log('Embedding model loaded successfully');
     }
 
