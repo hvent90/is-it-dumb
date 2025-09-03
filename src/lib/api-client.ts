@@ -1,4 +1,5 @@
 import { DetailedReport } from '@/types/events';
+import { DataSource } from '@/contexts/data-source-context';
 
 // Frontend-friendly interface for search submission
 export interface SearchSubmission {
@@ -104,25 +105,9 @@ class ApiClient {
   }
 
   // Analytics data fetching methods
-  async getModelCounts(timeRange?: string, modelFamily?: string): Promise<{ data: Array<{ name: string; value: number }> }> {
-    try {
-      const params = new URLSearchParams({
-        type: 'model_counts',
-        ...(timeRange && { time_range: timeRange }),
-        ...(modelFamily && modelFamily !== 'all' && { model_family: modelFamily }),
-      });
-
-      const response = await fetch(`/api/analytics?${params}`);
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to fetch model counts');
-      }
-
-      return data;
-    } catch (error) {
-      console.error('Error fetching model counts:', error);
-      // Return mock data as fallback
+  async getModelCounts(timeRange?: string, modelFamily?: string, dataSource: DataSource = 'real'): Promise<{ data: Array<{ name: string; value: number }> }> {
+    if (dataSource === 'mock') {
+      // Return mock data directly, no API call
       return {
         data: [
           { name: 'GPT-4', value: 1250 },
@@ -133,51 +118,59 @@ class ApiClient {
         ]
       };
     }
+
+    // Original real API logic (without try/catch fallback)
+    const params = new URLSearchParams({
+      type: 'model_counts',
+      ...(timeRange && { time_range: timeRange }),
+      ...(modelFamily && modelFamily !== 'all' && { model_family: modelFamily }),
+    });
+
+    const response = await fetch(`/api/analytics?${params}`);
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || 'Failed to fetch model counts');
+    }
+
+    return data;
   }
 
-  async getIssueCounts(timeRange?: string, modelFamily?: string): Promise<{ data: Array<{ name: string; value: number }> }> {
-    try {
-      const params = new URLSearchParams({
-        type: 'issue_counts',
-        ...(timeRange && { time_range: timeRange }),
-        ...(modelFamily && modelFamily !== 'all' && { model_family: modelFamily }),
-      });
-
-      const response = await fetch(`/api/analytics?${params}`);
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to fetch issue counts');
-      }
-
-      return data;
-    } catch (error) {
-      console.error('Error fetching issue counts:', error);
-      // Return mock data as fallback
+  async getIssueCounts(timeRange?: string, modelFamily?: string, dataSource: DataSource = 'real'): Promise<{ data: Array<{ name: string; value: number }> }> {
+    if (dataSource === 'mock') {
+      // Return mock data directly, no API call
       return {
         data: [
           { name: 'Hallucination', value: 35 },
           { name: 'Memory Issues', value: 28 },
           { name: 'Reliability', value: 22 },
           { name: 'UI Problems', value: 15 },
+          { name: 'Performance', value: 12 },
+          { name: 'Safety Concerns', value: 8 }
         ]
       };
     }
+
+    // Original real API logic (without try/catch fallback)
+    const params = new URLSearchParams({
+      type: 'issue_counts',
+      ...(timeRange && { time_range: timeRange }),
+      ...(modelFamily && modelFamily !== 'all' && { model_family: modelFamily }),
+    });
+
+    const response = await fetch(`/api/analytics?${params}`);
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || 'Failed to fetch issue counts');
+    }
+
+    return data;
   }
 
-  async getModelTimeseries(modelName: string): Promise<{ data: Array<{ date: string; value: number }> }> {
-    try {
-      const response = await fetch(`/api/analytics?type=model_timeseries&model_name=${encodeURIComponent(modelName)}`);
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to fetch model timeseries');
-      }
-
-      return data;
-    } catch (error) {
-      console.error('Error fetching model timeseries:', error);
-      // Return mock data as fallback
+  async getModelTimeseries(modelName: string, dataSource: DataSource = 'real'): Promise<{ data: Array<{ date: string; value: number }> }> {
+    if (dataSource === 'mock') {
+      // Return mock data directly, no API call
       return {
         data: [
           { date: '2024-01-01', value: 10 },
@@ -188,21 +181,21 @@ class ApiClient {
         ]
       };
     }
+
+    // Original real API logic (without try/catch fallback)
+    const response = await fetch(`/api/analytics?type=model_timeseries&model_name=${encodeURIComponent(modelName)}`);
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || 'Failed to fetch model timeseries');
+    }
+
+    return data;
   }
 
-  async getModelIssueBreakdown(modelName: string): Promise<{ data: Array<{ name: string; value: number }> }> {
-    try {
-      const response = await fetch(`/api/analytics?type=model_issue_breakdown&model_name=${encodeURIComponent(modelName)}`);
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to fetch model issue breakdown');
-      }
-
-      return data;
-    } catch (error) {
-      console.error('Error fetching model issue breakdown:', error);
-      // Return mock data as fallback
+  async getModelIssueBreakdown(modelName: string, dataSource: DataSource = 'real'): Promise<{ data: Array<{ name: string; value: number }> }> {
+    if (dataSource === 'mock') {
+      // Return mock data directly, no API call
       return {
         data: [
           { name: 'Hallucination', value: 45 },
@@ -212,21 +205,21 @@ class ApiClient {
         ]
       };
     }
+
+    // Original real API logic (without try/catch fallback)
+    const response = await fetch(`/api/analytics?type=model_issue_breakdown&model_name=${encodeURIComponent(modelName)}`);
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || 'Failed to fetch model issue breakdown');
+    }
+
+    return data;
   }
 
-  async getIssueAffectedModels(issueCategory: string): Promise<{ data: Array<{ name: string; value: number }> }> {
-    try {
-      const response = await fetch(`/api/analytics?type=issue_models&issue_category=${encodeURIComponent(issueCategory)}`);
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to fetch issue affected models');
-      }
-
-      return data;
-    } catch (error) {
-      console.error('Error fetching issue affected models:', error);
-      // Return mock data as fallback
+  async getIssueAffectedModels(issueCategory: string, dataSource: DataSource = 'real'): Promise<{ data: Array<{ name: string; value: number }> }> {
+    if (dataSource === 'mock') {
+      // Return mock data directly, no API call
       return {
         data: [
           { name: 'GPT-4', value: 25 },
@@ -236,21 +229,21 @@ class ApiClient {
         ]
       };
     }
+
+    // Original real API logic (without try/catch fallback)
+    const response = await fetch(`/api/analytics?type=issue_models&issue_category=${encodeURIComponent(issueCategory)}`);
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || 'Failed to fetch issue affected models');
+    }
+
+    return data;
   }
 
-  async getRecentClusters(): Promise<{ data: Array<{ cluster_id: string; cluster_summary: string; report_count: number; representative_texts: string[]; processed_at: string }> }> {
-    try {
-      const response = await fetch(`/api/analytics?type=recent_clusters`);
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to fetch recent clusters');
-      }
-
-      return data;
-    } catch (error) {
-      console.error('Error fetching recent clusters:', error);
-      // Return mock data as fallback
+  async getRecentClusters(dataSource: DataSource = 'real'): Promise<{ data: Array<{ cluster_id: string; cluster_summary: string; report_count: number; representative_texts: string[]; processed_at: string }> }> {
+    if (dataSource === 'mock') {
+      // Return mock data directly, no API call
       return {
         data: [
           {
@@ -270,9 +263,19 @@ class ApiClient {
         ]
       };
     }
+
+    // Original real API logic (without try/catch fallback)
+    const response = await fetch(`/api/analytics?type=recent_clusters`);
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || 'Failed to fetch recent clusters');
+    }
+
+    return data;
   }
 
-  async getModelIssuesTimeseries(timeRange?: string, modelFamily?: string): Promise<{
+  async getModelIssuesTimeseries(timeRange?: string, modelFamily?: string, dataSource: DataSource = 'real'): Promise<{
     data: Array<{
       date: string;
       name: string;
@@ -281,35 +284,11 @@ class ApiClient {
     }>;
     models: string[]
   }> {
-    try {
-      const params = new URLSearchParams({
-        type: 'model_issues_timeseries',
-        ...(timeRange && { time_range: timeRange }),
-        ...(modelFamily && modelFamily !== 'all' && { model_family: modelFamily }),
-      });
-
-      console.log('🔍 Fetching model issues timeseries with params:', {
-        timeRange,
-        modelFamily,
-        url: `/api/analytics?${params}`
-      });
-
-      const response = await fetch(`/api/analytics?${params}`);
-      const data = await response.json();
-
-      if (!response.ok) {
-        console.log('❌ API call failed, falling back to mock data:', data.error);
-        throw new Error(data.error || 'Failed to fetch model issues timeseries');
-      }
-
-      console.log('✅ API call successful, returning real data');
-      return data;
-    } catch (error) {
-      console.error('❌ Error fetching model issues timeseries:', error);
-      // Return mock data as fallback with time series data
+    if (dataSource === 'mock') {
+      // Return mock data directly, no API call
       const mockModels = ['GPT-4', 'Claude-3', 'GPT-3.5', 'Gemini Pro', 'Llama 2'];
       const mockData = [];
-      
+
       // Determine number of days based on timeRange
       const daysMap: { [key: string]: number } = {
         '7d': 7,
@@ -318,23 +297,13 @@ class ApiClient {
         '1y': 365
       };
       const days = daysMap[timeRange || '30d'] || 30;
-      
-      console.log('🔧 Generating mock data with params:', {
-        timeRange,
-        modelFamily,
-        days,
-        mockModels: modelFamily === 'all' ? mockModels : mockModels.filter(model => {
-          // This would normally filter by model family, but for simplicity keeping all for now
-          return true;
-        })
-      });
-      
+
       // Generate mock data for the specified time range
       for (let i = days - 1; i >= 0; i--) {
         const date = new Date();
         date.setDate(date.getDate() - i);
         const dateStr = date.toISOString().split('T')[0];
-        
+
         const entry: { date: string; name: string; value: number; [modelName: string]: string | number } = {
           date: dateStr,
           name: dateStr,
@@ -355,7 +324,33 @@ class ApiClient {
         models: mockModels
       };
     }
+
+    // Original real API logic (without try/catch fallback)
+    const params = new URLSearchParams({
+      type: 'model_issues_timeseries',
+      ...(timeRange && { time_range: timeRange }),
+      ...(modelFamily && modelFamily !== 'all' && { model_family: modelFamily }),
+    });
+
+    console.log('🔍 Fetching model issues timeseries with params:', {
+      timeRange,
+      modelFamily,
+      url: `/api/analytics?${params}`
+    });
+
+    const response = await fetch(`/api/analytics?${params}`);
+    const data = await response.json();
+
+    if (!response.ok) {
+      console.log('❌ API call failed:', data.error);
+      throw new Error(data.error || 'Failed to fetch model issues timeseries');
+    }
+
+    console.log('✅ API call successful, returning real data');
+    return data;
   }
+
+
 
   // Health check
   async healthCheck(): Promise<{ healthy: boolean; message?: string }> {

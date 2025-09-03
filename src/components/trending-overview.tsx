@@ -8,8 +8,8 @@ import { RecentClusters } from './recent-clusters';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { CardHeader, CardTitle } from '@/components/ui/card';
 import { Info } from 'lucide-react';
-import { apiClient } from '@/lib/api-client';
-import { mockQualityDataService } from '@/lib/mock-quality-data';
+import { useApiClient } from '@/lib/api-client-hooks';
+import { useDataSource } from '@/contexts/data-source-context';
 
 // Function to enhance data with highlighting
 const enhanceDataWithHighlighting = (data: Array<{ name: string; value: number }>, highlightedModel: string | null) => {
@@ -24,6 +24,8 @@ interface TrendingOverviewProps {
 }
 
 export function TrendingOverview({ highlightedModel }: TrendingOverviewProps) {
+  const apiClient = useApiClient();
+  const { dataSource } = useDataSource();
   const [timeRange, setTimeRange] = useState<TimeRange>('30d');
   const [modelFamily, setModelFamily] = useState<ModelFamily>('all');
   const [isLoading, setIsLoading] = useState(false);
@@ -31,47 +33,34 @@ export function TrendingOverview({ highlightedModel }: TrendingOverviewProps) {
   const [issueData, setIssueData] = useState<Array<{ name: string; value: number }>>([]);
   const [qualityData, setQualityData] = useState<Array<{ date: string; [modelName: string]: string | number }>>([]);
   const [qualityModels, setQualityModels] = useState<string[]>([]);
-   const [timeseriesData, setTimeseriesData] = useState<Array<{ date: string; name: string; value: number; [modelName: string]: string | number }>>([]);
+    const [timeseriesData, setTimeseriesData] = useState<Array<{ date: string; name: string; value: number; [modelName: string]: string | number }>>([]);
   const [availableModels, setAvailableModels] = useState<string[]>([]);
 
   const handleApplyFilters = useCallback(async () => {
     setIsLoading(true);
 
     try {
-      // Fetch data from APIs with current filter values
+      // Use context-aware API client (no manual data source handling)
       const [modelCountsResult, issueCountsResult, qualityResult, timeseriesResult] = await Promise.all([
         apiClient.getModelCounts(timeRange, modelFamily),
         apiClient.getIssueCounts(timeRange, modelFamily),
-        mockQualityDataService.getQualityTimeseriesForChart(),
+        apiClient.getQualityTimeseriesForChart(),
         apiClient.getModelIssuesTimeseries(timeRange, modelFamily)
       ]);
 
-      // Mock data for Issue Distribution
-      const mockIssueData = [
-        { name: 'Hallucination', value: 35 },
-        { name: 'Memory Issues', value: 28 },
-        { name: 'Reliability', value: 22 },
-        { name: 'UI Problems', value: 15 },
-        { name: 'Performance', value: 12 },
-        { name: 'Safety Concerns', value: 8 }
-      ];
-
-      // Update state with fetched data and mock issue data
+      // Update state with fetched data (no manual mock overrides)
       setModelData(enhanceDataWithHighlighting(modelCountsResult.data, highlightedModel || null));
-      setIssueData(mockIssueData); // Use mock data instead of real API data
+      setIssueData(issueCountsResult.data); // Use API response, not hardcoded mock
       setQualityData(qualityResult.data);
       setQualityModels(qualityResult.models);
       setTimeseriesData(timeseriesResult.data);
       setAvailableModels(timeseriesResult.models);
-      
+
       // Debug logging
-      console.log('Timeseries API Response:', timeseriesResult);
-      console.log('Timeseries Data:', timeseriesResult.data);
-      console.log('Available Models:', timeseriesResult.models);
-      console.log('First few data points:', timeseriesResult.data?.slice(0, 3));
+      console.log('Data fetched successfully');
     } catch (error) {
       console.error('Error fetching analytics data:', error);
-      // Fallback to empty arrays if API fails
+      // Clear data on error (no fallback per requirements)
       setModelData([]);
       setIssueData([]);
       setQualityData([]);
@@ -81,7 +70,7 @@ export function TrendingOverview({ highlightedModel }: TrendingOverviewProps) {
     } finally {
       setIsLoading(false);
     }
-  }, [timeRange, modelFamily, highlightedModel]);
+  }, [timeRange, modelFamily, highlightedModel, dataSource]);
 
   const handleModelClick = (data: { name: string; value: number; isHighlighted?: boolean }) => {
     // Navigate to model detail page
@@ -109,10 +98,10 @@ export function TrendingOverview({ highlightedModel }: TrendingOverviewProps) {
     }
   };
 
-  // Load initial data and refresh when filters change
+  // Load initial data and refresh when filters or data source change
   useEffect(() => {
     handleApplyFilters();
-  }, [handleApplyFilters]);
+  }, [handleApplyFilters, dataSource]);
 
   return (
     <div className="space-y-6">
@@ -139,7 +128,7 @@ export function TrendingOverview({ highlightedModel }: TrendingOverviewProps) {
       <div className="w-full">
         <AnalyticsChart
           title="Models Issue Reports Over Time"
-          data={timeseriesData}
+          data={timeseriesData as any}
           type="area"
           nameKey="date"
           height={400}
@@ -178,7 +167,7 @@ export function TrendingOverview({ highlightedModel }: TrendingOverviewProps) {
       <div className="w-full">
         <AnalyticsChart
           title="Model Evals"
-          data={qualityData}
+          data={qualityData as any}
           type="line"
           nameKey="date"
           height={350}

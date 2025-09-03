@@ -4,6 +4,7 @@ import React from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Calendar } from 'lucide-react';
+import { useDataSource, DataSource } from '@/contexts/data-source-context';
 
 export type TimeRange = '7d' | '30d' | '90d' | '1y';
 export type ModelFamily = 'all' | 'openai' | 'anthropic' | 'google' | 'meta' | 'other';
@@ -25,6 +26,8 @@ export function FilterControls({
   onApplyFilters,
   isLoading = false,
 }: FilterControlsProps) {
+  const { dataSource, setDataSource } = useDataSource();
+
   return (
     <div className="flex flex-row gap-3 items-center mb-6">
       <Select value={timeRange} onValueChange={onTimeRangeChange}>
@@ -50,6 +53,20 @@ export function FilterControls({
           <SelectItem value="google">Google</SelectItem>
           <SelectItem value="meta">Meta</SelectItem>
           <SelectItem value="other">Other</SelectItem>
+        </SelectContent>
+      </Select>
+
+      {/* NEW: Data Source selector */}
+      <Select value={dataSource} onValueChange={(value: DataSource) => {
+        setDataSource(value);
+        onApplyFilters(); // Trigger data refresh
+      }}>
+        <SelectTrigger className="w-32">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="real">Real Data</SelectItem>
+          <SelectItem value="mock">Mock Data</SelectItem>
         </SelectContent>
       </Select>
 

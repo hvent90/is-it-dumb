@@ -3,7 +3,8 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { AlertCircle, TrendingUp } from 'lucide-react';
-import { apiClient } from '@/lib/api-client';
+import { useApiClient } from '@/lib/api-client-hooks';
+import { useDataSource } from '@/contexts/data-source-context';
 
 interface ClusterData {
   cluster_id: string;
@@ -76,6 +77,8 @@ const mockClusters: ClusterData[] = [
 ];
 
 export function RecentClusters({ isLoading = false }: RecentClustersProps) {
+  const apiClient = useApiClient();
+  const { dataSource } = useDataSource();
   const [clusters, setClusters] = useState<ClusterData[]>(mockClusters);
   const [loading] = useState(false); // Start with mock data, no loading
 
@@ -83,10 +86,8 @@ export function RecentClusters({ isLoading = false }: RecentClustersProps) {
     const fetchClusters = async () => {
       try {
         const result = await apiClient.getRecentClusters();
-        // Only update if we get real data, otherwise keep mock data
-        if (result.data && result.data.length > 0) {
-          setClusters(result.data);
-        }
+        // Update with data from context-aware API client
+        setClusters(result.data);
       } catch (error) {
         console.error('Error fetching clusters:', error);
         // Keep mock data on error
@@ -94,7 +95,7 @@ export function RecentClusters({ isLoading = false }: RecentClustersProps) {
     };
 
     fetchClusters();
-  }, []);
+  }, [dataSource]); // Re-run when data source changes
 
   if (loading || isLoading) {
     return (
@@ -176,9 +177,9 @@ export function RecentClusters({ isLoading = false }: RecentClustersProps) {
                 <div className="space-y-1">
                   <p className="text-xs text-gray-600 font-medium">Sample reports:</p>
                   {cluster.representative_texts.slice(0, 2).map((text, index) => (
-                    <p key={index} className="text-xs text-gray-500 italic">
-                      "{text.length > 80 ? `${text.substring(0, 80)}...` : text}"
-                    </p>
+                     <p key={index} className="text-xs text-gray-500 italic">
+                       &ldquo;{text.length > 80 ? `${text.substring(0, 80)}...` : text}&rdquo;
+                     </p>
                   ))}
                 </div>
               )}

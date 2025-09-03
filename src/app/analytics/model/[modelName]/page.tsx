@@ -7,12 +7,14 @@ import { AnalyticsChart } from '@/components/analytics-chart';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, TrendingUp, AlertTriangle, Beaker } from 'lucide-react';
-import { apiClient } from '@/lib/api-client';
-import { mockQualityDataService } from '@/lib/mock-quality-data';
+import { useApiClient } from '@/lib/api-client-hooks';
+import { useDataSource } from '@/contexts/data-source-context';
 
 export default function ModelDetailPage() {
   const params = useParams();
   const modelName = decodeURIComponent(params.modelName as string);
+  const apiClient = useApiClient();
+  const { dataSource } = useDataSource();
 
   const [timeseriesData, setTimeseriesData] = useState<Array<{ date: string; value: number }>>([]);
   const [issueBreakdownData, setIssueBreakdownData] = useState<Array<{ name: string; value: number }>>([]);
@@ -36,8 +38,8 @@ export default function ModelDetailPage() {
         const [timeseriesResult, breakdownResult, qualityScoreResult, qualityTrendsResult] = await Promise.all([
           apiClient.getModelTimeseries(modelName),
           apiClient.getModelIssueBreakdown(modelName),
-          mockQualityDataService.getModelQualityScore(modelName),
-          mockQualityDataService.getModelQualityTrends(modelName)
+          apiClient.getModelQualityScore(modelName),
+          apiClient.getModelQualityTrends(modelName)
         ]);
 
         setTimeseriesData(timeseriesResult.data);
@@ -55,7 +57,7 @@ export default function ModelDetailPage() {
     if (modelName) {
       fetchData();
     }
-  }, [modelName]);
+  }, [modelName, dataSource]); // Re-run when data source changes
 
   const handleBackClick = () => {
     if (typeof window !== 'undefined') {

@@ -7,11 +7,14 @@ import { AnalyticsChart } from '@/components/analytics-chart';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, AlertTriangle, Users } from 'lucide-react';
-import { apiClient } from '@/lib/api-client';
+import { useApiClient } from '@/lib/api-client-hooks';
+import { useDataSource } from '@/contexts/data-source-context';
 
 export default function IssueDetailPage() {
   const params = useParams();
   const issueCategory = decodeURIComponent(params.issueCategory as string);
+  const apiClient = useApiClient();
+  const { dataSource } = useDataSource();
 
   const [affectedModelsData, setAffectedModelsData] = useState<Array<{ name: string; value: number }>>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -36,7 +39,7 @@ export default function IssueDetailPage() {
     if (issueCategory) {
       fetchData();
     }
-  }, [issueCategory]);
+  }, [issueCategory, dataSource]); // Re-run when data source changes
 
   const handleBackClick = () => {
     if (typeof window !== 'undefined') {
