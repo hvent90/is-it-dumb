@@ -253,6 +253,7 @@ const DEFAULT_TABS: TabItem[] = [
 interface SmoothTabProps {
     items?: TabItem[];
     defaultTabId?: string;
+    value?: string;
     className?: string;
     activeColor?: string;
     onChange?: (tabId: string) => void;
@@ -290,11 +291,15 @@ const transition = {
 export default function SmoothTab({
     items = DEFAULT_TABS,
     defaultTabId = DEFAULT_TABS[0].id,
+    value,
     className,
     activeColor = "bg-[#1F9CFE]",
     onChange,
 }: SmoothTabProps) {
-    const [selected, setSelected] = React.useState<string>(defaultTabId);
+    const [internalSelected, setInternalSelected] = React.useState<string>(defaultTabId);
+    
+    // Use controlled value if provided, otherwise use internal state
+    const selected = value !== undefined ? value : internalSelected;
     const [direction, setDirection] = React.useState(0);
     const [dimensions, setDimensions] = React.useState({ width: 0, left: 0 });
 
@@ -333,7 +338,12 @@ export default function SmoothTab({
         const currentIndex = items.findIndex((item) => item.id === selected);
         const newIndex = items.findIndex((item) => item.id === tabId);
         setDirection(newIndex > currentIndex ? 1 : -1);
-        setSelected(tabId);
+        
+        // Only update internal state if uncontrolled
+        if (value === undefined) {
+            setInternalSelected(tabId);
+        }
+        
         onChange?.(tabId);
     };
 

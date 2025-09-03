@@ -109,13 +109,14 @@ interface ModelSearchInputProps {
 
 export function ModelSearchInput({ onSubmitSuccess, onSubmitError, onModelSelect }: ModelSearchInputProps) {
   const [open, setOpen] = useState(false);
-  const [selectedModel, setSelectedModel] = useState<string>(() => {
-    // Restore selected model from sessionStorage on mount
+  const [selectedModel, setSelectedModel] = useState<string>('');
+
+  // Clear any persisted model selection on page load
+  useEffect(() => {
     if (typeof window !== 'undefined') {
-      return sessionStorage.getItem('last_search_model') || '';
+      sessionStorage.removeItem('last_search_model');
     }
-    return '';
-  });
+  }, []);
 
   // Sync with sessionStorage changes (e.g., when switching tabs)
   useEffect(() => {

@@ -169,7 +169,7 @@ export function TrendingOverview({ highlightedModel }: TrendingOverviewProps) {
           isLoading={isLoading}
         />
 
-        <div className="md:col-span-2 lg:col-span-3">
+        <div className="col-span-2">
           <RecentClusters isLoading={isLoading} />
         </div>
       </DashboardGrid>
@@ -187,7 +187,7 @@ export function TrendingOverview({ highlightedModel }: TrendingOverviewProps) {
           colors={['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6']}
           customHeader={
             <CardHeader>
-              <CardTitle className="mb-4">Model Evals</CardTitle>
+              <CardTitle className="mb-4">Model Evals (mock data)</CardTitle>
               {/* Faux tab switcher */}
               <div className="flex space-x-1 bg-gray-100 p-1 rounded-lg w-fit">
                 <button className="px-3 py-1 text-sm font-medium bg-white text-gray-900 rounded shadow-sm">

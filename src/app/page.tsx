@@ -19,6 +19,7 @@ export default function Home() {
   const [showReportForm, setShowReportForm] = useState(false);
   const [activeTab, setActiveTab] = useState("search");
   const [highlightedModel, setHighlightedModel] = useState<string | null>(null);
+  const [selectedModel, setSelectedModel] = useState<string>('');
 
   // Form state moved from DetailedReportForm
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -32,7 +33,9 @@ export default function Home() {
 
 
   const handleModelSelect = (modelName: string) => {
-    // Store the selected model immediately for the report form
+    // Update selected model state
+    setSelectedModel(modelName);
+    // Store the selected model immediately for the report form (for backward compatibility)
     if (typeof window !== 'undefined') {
       if (modelName) {
         sessionStorage.setItem('last_search_model', modelName);
@@ -42,8 +45,7 @@ export default function Home() {
     }
     // Show report form when model is selected, hide when deselected
     setShowReportForm(!!modelName);
-    // Set highlighted model for background animation
-    setHighlightedModel(modelName || null);
+    // Don't set highlighted model here - only after successful submission
   };
 
   const handleSearchSuccess = () => {
@@ -60,7 +62,7 @@ export default function Home() {
 
 
   const handleFormSubmit = async () => {
-    const modelName = typeof window !== 'undefined' ? sessionStorage.getItem('last_search_model') || '' : '';
+    const modelName = selectedModel;
 
     if (!examplePrompts.trim()) {
       setReportError("Please describe the issue");
@@ -171,8 +173,25 @@ export default function Home() {
             <SmoothTab
               items={tabItems}
               defaultTabId="search"
+              value={activeTab}
               onChange={(tabId) => {
                 setActiveTab(tabId);
+                // Clear success/error messages when navigating away from search tab manually
+                if (tabId !== 'search') {
+                  setReportSuccess(null);
+                  setReportError(null);
+                  // Also clear the report form and selected model when leaving search
+                  setShowReportForm(false);
+                  setSelectedModel('');
+                  // Clear sessionStorage so ModelSearchInput also clears
+                  if (typeof window !== 'undefined') {
+                    sessionStorage.removeItem('last_search_model');
+                  }
+                }
+                // Clear highlighted model when navigating away from trending tab
+                if (tabId !== 'trending') {
+                  setHighlightedModel(null);
+                }
               }}
             />
           </div>
@@ -220,7 +239,7 @@ export default function Home() {
                 {showReportForm && (
                   <div className="mt-8">
                     <ReportForm
-                      modelName={typeof window !== 'undefined' ? sessionStorage.getItem('last_search_model') || '' : ''}
+                      modelName={selectedModel}
                       issueCategory={issueCategory}
                       setIssueCategory={setIssueCategory}
                       productContext={productContext}
