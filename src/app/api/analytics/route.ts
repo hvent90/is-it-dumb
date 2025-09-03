@@ -103,16 +103,96 @@ export async function GET(request: NextRequest) {
         });
 
       case 'recent_clusters':
-        const clustersData = await callTinybirdPipe('recent_clusters');
-        return NextResponse.json({
-          data: clustersData.data?.map((item: { cluster_id: string; cluster_summary: string; report_count: number; representative_texts: string[]; processed_at: string }) => ({
-            cluster_id: item.cluster_id,
-            cluster_summary: item.cluster_summary,
-            report_count: item.report_count,
-            representative_texts: item.representative_texts,
-            processed_at: item.processed_at,
-          })) || []
-        });
+        // Try to use the pipe first, fall back to SQL query if pipe doesn't exist
+        try {
+          const clustersData = await callTinybirdPipe('recent_clusters');
+          return NextResponse.json({
+            data: clustersData.data?.map((item: { cluster_id: string; cluster_summary: string; report_count: number; representative_texts: string[]; processed_at: string }) => ({
+              cluster_id: item.cluster_id,
+              cluster_summary: item.cluster_summary,
+              report_count: item.report_count,
+              representative_texts: item.representative_texts,
+              processed_at: item.processed_at,
+            })) || []
+          });
+        } catch (pipeError) {
+          console.warn('recent_clusters pipe error:', pipeError);
+          console.warn('Falling back to direct SQL query');
+          
+          // Fallback: Query report_clusters data directly using SQL
+          // First try to see what data exists
+          const testQuery = `SHOW TABLES`;
+          const testUrl = `${TINYBIRD_BASE_URL}/v0/sql?q=${encodeURIComponent(testQuery)}`;
+          const testResponse = await fetch(testUrl, {
+            headers: { 'Authorization': `Bearer ${TINYBIRD_TOKEN}` },
+          });
+          
+          if (testResponse.ok) {
+            const tablesText = await testResponse.text();
+            console.log('Available tables:', tablesText);
+          }
+          
+          const clustersQuery = `
+            SELECT 
+              cluster_id,
+              cluster_summary,
+              report_count,
+              representative_texts,
+              processed_at
+            FROM report_clusters
+            ORDER BY processed_at DESC
+            LIMIT 10
+          `;
+          
+          const clustersUrl = `${TINYBIRD_BASE_URL}/v0/sql?q=${encodeURIComponent(clustersQuery)}`;
+          const clustersResponse = await fetch(clustersUrl, {
+            headers: {
+              'Authorization': `Bearer ${TINYBIRD_TOKEN}`,
+            },
+          });
+          
+          if (!clustersResponse.ok) {
+            throw new Error(`Tinybird SQL API error: ${clustersResponse.status}`);
+          }
+          
+          // Parse TSV response
+          const clustersText = await clustersResponse.text();
+          console.log('Clusters SQL response:', clustersText.substring(0, 200) + '...');
+          const clustersLines = clustersText.trim().split('\n');
+          const clustersData = [];
+          
+          for (const line of clustersLines) {
+            if (!line.trim()) continue;
+            
+            const columns = line.split('\t');
+            if (columns.length >= 5) {
+              const [cluster_id, cluster_summary, report_count, representative_texts, processed_at] = columns;
+              
+              // Parse representative_texts array
+              let parsedTexts: string[] = [];
+              try {
+                if (representative_texts && representative_texts.startsWith('[') && representative_texts.endsWith(']')) {
+                  parsedTexts = JSON.parse(representative_texts);
+                }
+              } catch (e) {
+                console.warn(`Failed to parse representative_texts for cluster ${cluster_id}:`, e);
+                parsedTexts = [];
+              }
+              
+              clustersData.push({
+                cluster_id,
+                cluster_summary,
+                report_count: parseInt(report_count) || 0,
+                representative_texts: parsedTexts,
+                processed_at,
+              });
+            }
+          }
+          
+          return NextResponse.json({
+            data: clustersData
+          });
+        }
 
       case 'model_issues_timeseries':
         const modelTimeseriesParams: Record<string, string> = {};

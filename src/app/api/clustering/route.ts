@@ -93,7 +93,9 @@ export async function GET() {
     }
 
     // Get events from the last 24 hours that have embeddings
-    const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+    const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    const formattedTimestamp = oneDayAgo.toISOString().replace('T', ' ').replace('Z', '');
+    console.log('Formatted timestamp:', formattedTimestamp);
 
     const query = `
       SELECT
@@ -103,14 +105,13 @@ export async function GET() {
         quick_report_text,
         embedding
       FROM llm_events
-      WHERE timestamp >= '${oneDayAgo}'
+      WHERE timestamp >= '${formattedTimestamp}'
+        AND quick_report_text IS NOT NULL
         AND embedding IS NOT NULL
-        AND length(quick_report_text) > 10
       ORDER BY timestamp DESC
       LIMIT 1000
     `;
 
-    const baseUrl = process.env.TINYBIRD_BASE_URL || 'https://api.tinybird.co';
     const response = await fetch(`${baseUrl}/v0/sql?q=${encodeURIComponent(query)}`, {
       headers: {
         'Authorization': `Bearer ${token}`
@@ -118,11 +119,47 @@ export async function GET() {
     });
 
     if (!response.ok) {
-      throw new Error(`Failed to fetch events: ${response.status}`);
+      const errorText = await response.text().catch(() => 'Unknown error');
+      console.error(`Tinybird SQL API error: ${response.status} ${response.statusText} - ${errorText}`);
+      throw new Error(`Failed to fetch events: ${response.status} - ${errorText}`);
     }
 
-    const data = await response.json();
-    const events = data.data || [];
+    // Parse TSV response from Tinybird SQL API
+    const responseText = await response.text();
+
+    // Parse TSV data
+    const lines = responseText.trim().split('\n');
+    const events = [];
+    
+    for (const line of lines) {
+      if (!line.trim()) continue;
+      
+      const columns = line.split('\t');
+      if (columns.length >= 5) {
+        const [session_id, timestamp, model_name, quick_report_text, embeddingStr] = columns;
+        
+        // Parse embedding array
+        let embedding: number[] = [];
+        try {
+          if (embeddingStr && embeddingStr.startsWith('[') && embeddingStr.endsWith(']')) {
+            embedding = JSON.parse(embeddingStr);
+          }
+        } catch (e) {
+          console.warn(`Failed to parse embedding for session ${session_id}:`, e);
+          continue; // Skip events without valid embeddings
+        }
+        
+        if (embedding.length > 0) {
+          events.push({
+            session_id,
+            timestamp,
+            model_name,
+            quick_report_text,
+            embedding
+          });
+        }
+      }
+    }
 
     console.log(`Fetched ${events.length} events with embeddings`);
 
@@ -149,9 +186,12 @@ export async function GET() {
         if (processedEvents.has(otherEvent.session_id) || otherEvent.session_id === event.session_id) continue;
 
         const similarity = cosineSimilarity(event.embedding, otherEvent.embedding);
-        if (similarity > 0.7) { // Similarity threshold
+        console.log(`Similarity between "${event.quick_report_text}" and "${otherEvent.quick_report_text}": ${similarity}`);
+        
+        if (similarity > 0.4) { // Lowered similarity threshold to capture semantic relationships
           similarEvents.push(otherEvent);
           processedEvents.add(otherEvent.session_id);
+          console.log(`Added to cluster: ${otherEvent.quick_report_text} (similarity: ${similarity})`);
         }
       }
 

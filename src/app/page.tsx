@@ -29,7 +29,7 @@ export default function Home() {
   const [otherContextText, setOtherContextText] = useState("");
   const [isOtherIssue, setIsOtherIssue] = useState(false);
   const [otherIssueText, setOtherIssueText] = useState("");
-  const [examplePrompts, setExamplePrompts] = useState("");
+  const [quickReportText, setQuickReportText] = useState("");
 
 
   const handleModelSelect = (modelName: string) => {
@@ -64,7 +64,7 @@ export default function Home() {
   const handleFormSubmit = async () => {
     const modelName = selectedModel;
 
-    if (!examplePrompts.trim()) {
+    if (!quickReportText.trim()) {
       setReportError("Please describe the issue");
       return;
     }
@@ -99,7 +99,7 @@ export default function Home() {
         model_name: modelName,
         issue_category: isOtherIssue ? otherIssueText.trim() : issueCategory as 'hallucination' | 'memory' | 'reliability' | 'ui' | 'other',
         product_context: isOtherContext ? otherContextText.trim() : productContext,
-        example_prompts: examplePrompts.trim() || undefined,
+        quickReportText: quickReportText.trim() || undefined,
       };
 
       const result = await apiClient.submitDetailedReport(submission);
@@ -119,7 +119,7 @@ export default function Home() {
          setOtherContextText("");
          setIsOtherIssue(false);
          setOtherIssueText("");
-         setExamplePrompts("");
+         setQuickReportText("");
 
          // Clear success message and highlighted model after 10 seconds
          setTimeout(() => {
@@ -252,8 +252,8 @@ export default function Home() {
                       setIsOtherIssue={setIsOtherIssue}
                       otherIssueText={otherIssueText}
                       setOtherIssueText={setOtherIssueText}
-                      examplePrompts={examplePrompts}
-                      setExamplePrompts={setExamplePrompts}
+                      quickReportText={quickReportText}
+                      setQuickReportText={setQuickReportText}
                       onSubmit={handleFormSubmit}
                       isSubmitting={isSubmitting}
                     />

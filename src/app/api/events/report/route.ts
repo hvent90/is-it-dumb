@@ -168,14 +168,14 @@ export async function POST(request: NextRequest) {
       issue_category: body.issue_category,
       severity: body.severity || 'medium',
       product_context: body.product_context || 'Unknown',
-      example_prompts: body.example_prompts
+      quickReportText: body.quickReportText
     };
 
     // Generate embedding if quick_report_text is provided
     let embedding: number[] | null = null;
-    if (body.quick_report_text && typeof body.quick_report_text === 'string') {
+    if (body.quickReportText && typeof body.quickReportText === 'string') {
       console.log('Generating embedding for quick report text...');
-      embedding = await generateEmbedding(body.quick_report_text);
+      embedding = await generateEmbedding(body.quickReportText);
       console.log(`Generated embedding with ${embedding.length} dimensions`);
     }
 
@@ -186,7 +186,7 @@ export async function POST(request: NextRequest) {
       model_name: detailedReport.model_name,
       event_type: 'report',
       entry_path: 'search_tab', // Reports typically come from search tab
-      quick_report_text: body.quick_report_text || null,
+      quick_report_text: body.quickReportText || null,
       embedding: embedding,
       geo_city: geoLocation.city || null,
       geo_country: geoLocation.country || null,
@@ -196,7 +196,7 @@ export async function POST(request: NextRequest) {
       issue_category: detailedReport.issue_category,
       severity: detailedReport.severity || null,
       product_context: detailedReport.product_context,
-      example_prompts: detailedReport.example_prompts || null
+      example_prompts: detailedReport.quickReportText || null
     };
 
     // Send to Tinybird

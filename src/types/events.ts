@@ -49,5 +49,5 @@ export interface DetailedReport {
   issue_category: string;
   severity?: 'low' | 'medium' | 'high';
   product_context: string; // e.g., "Direct API", "Cursor"
-  example_prompts?: string;
+  quickReportText?: string;
 }

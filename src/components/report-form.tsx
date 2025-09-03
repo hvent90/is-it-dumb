@@ -24,8 +24,8 @@ interface ReportFormProps {
   setIsOtherIssue: (value: boolean) => void;
   otherIssueText: string;
   setOtherIssueText: (value: string) => void;
-  examplePrompts: string;
-  setExamplePrompts: (value: string) => void;
+  quickReportText: string;
+  setQuickReportText: (value: string) => void;
   // Submit props
   onSubmit: () => void;
   isSubmitting: boolean;
@@ -45,8 +45,8 @@ export function ReportForm({
   setIsOtherIssue,
   otherIssueText,
   setOtherIssueText,
-  examplePrompts,
-  setExamplePrompts,
+  quickReportText,
+  setQuickReportText,
   onSubmit,
   isSubmitting
 }: ReportFormProps) {
@@ -89,8 +89,8 @@ export function ReportForm({
         <Textarea
           id="issue-description"
           placeholder="Describe the problem you're experiencing with this model..."
-          value={examplePrompts}
-          onChange={(e) => setExamplePrompts(e.target.value)}
+          value={quickReportText}
+          onChange={(e) => setQuickReportText(e.target.value)}
           className="min-h-[100px] resize-none bg-background/50 border-border"
         />
       </div>
@@ -209,7 +209,7 @@ export function ReportForm({
       <div className="pt-4">
         <Button
           onClick={onSubmit}
-          disabled={isSubmitting || !issueCategory || !productContext || !examplePrompts.trim()}
+          disabled={isSubmitting || !issueCategory || !productContext || !quickReportText.trim()}
           className="w-full bg-primary hover:bg-primary/90"
         >
           {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
