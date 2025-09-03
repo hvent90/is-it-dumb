@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { SearchEvent, Geolocation, UserAgentDetails } from '@/types';
 import { UAParser } from 'ua-parser-js';
-import { pipeline } from '@xenova/transformers';
+// import { pipeline } from '@xenova/transformers'; // Commented out - causes "libonnxruntime.so.1.14.0: cannot open shared object file" error in production serverless environments
 
 // Flattened event structure for Tinybird ingestion
 interface TinybirdEvent {
@@ -88,27 +88,34 @@ function parseUserAgent(userAgentString: string): UserAgentDetails {
 }
 
 // Global variable to cache the embedding model
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-let embeddingModel: any = null;
+// DISABLED: @xenova/transformers incompatible with serverless environments
+// eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars
+const embeddingModel: any = null;
 
 // Helper function to generate embeddings locally
+// DISABLED: @xenova/transformers causes "libonnxruntime.so.1.14.0: cannot open shared object file" 
+// error in production serverless environments (Vercel). Need to use external embedding API instead.
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 async function generateEmbedding(text: string): Promise<number[]> {
-  try {
-    // Initialize the model if not already loaded
-    if (!embeddingModel) {
-      console.log('Loading local embedding model...');
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      embeddingModel = await pipeline('feature-extraction', 'Xenova/all-MiniLM-L6-v2') as any;
-      console.log('Embedding model loaded successfully');
-    }
+  console.log('Embedding generation disabled - @xenova/transformers incompatible with serverless');
+  return [];
+  
+  // try {
+  //   // Initialize the model if not already loaded
+  //   if (!embeddingModel) {
+  //     console.log('Loading local embedding model...');
+  //     // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  //     embeddingModel = await pipeline('feature-extraction', 'Xenova/all-MiniLM-L6-v2') as any;
+  //     console.log('Embedding model loaded successfully');
+  //   }
 
-    // Generate embedding
-    const output = await embeddingModel(text, { pooling: 'mean', normalize: true });
-    return Array.from(output.data);
-  } catch (error) {
-    console.error('Error generating embedding:', error);
-    return [];
-  }
+  //   // Generate embedding
+  //   const output = await embeddingModel(text, { pooling: 'mean', normalize: true });
+  //   return Array.from(output.data);
+  // } catch (error) {
+  //   console.error('Error generating embedding:', error);
+  //   return [];
+  // }
 }
 
 // Helper function to send event to Tinybird
