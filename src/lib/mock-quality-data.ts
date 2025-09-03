@@ -165,6 +165,40 @@ export class MockQualityDataService {
       }))
     };
   }
+
+  // Get quality scores over time for line chart (multiple models)
+  async getQualityTimeseriesForChart(): Promise<{ 
+    data: Array<{ date: string; [modelName: string]: string | number }>; 
+    models: string[] 
+  }> {
+    await this.delay();
+    
+    const models = ['GPT-4', 'Claude-3', 'GPT-3.5', 'Gemini Pro', 'Llama 2'];
+    const timeseriesData = [];
+    
+    // Generate data for the last 14 days
+    for (let i = 13; i >= 0; i--) {
+      const date = new Date();
+      date.setDate(date.getDate() - i);
+      const dateStr = date.toISOString().split('T')[0];
+      
+      const entry: { date: string; [modelName: string]: string | number } = { date: dateStr };
+      
+      models.forEach((model) => {
+        const baseScore = mockQualityScores.find(m => m.model_name === model)?.overall_score || 80;
+        // Add some realistic variation (±3 points)
+        const variation = (Math.random() - 0.5) * 6;
+        entry[model] = Math.max(70, Math.min(100, Math.round((baseScore + variation) * 10) / 10));
+      });
+      
+      timeseriesData.push(entry);
+    }
+
+    return {
+      data: timeseriesData,
+      models: models
+    };
+  }
 }
 
 // Export singleton instance

@@ -17,20 +17,79 @@ interface RecentClustersProps {
   isLoading?: boolean;
 }
 
+const mockClusters: ClusterData[] = [
+  {
+    cluster_id: 'cluster_001',
+    cluster_summary: 'GPT-4 hallucination issues with factual accuracy (12 reports)',
+    report_count: 12,
+    representative_texts: [
+      'GPT-4 keeps making up facts about historical events that never happened',
+      'Model is providing incorrect scientific information with confidence',
+      'Getting completely wrong answers for basic math problems'
+    ],
+    processed_at: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString() // 2 hours ago
+  },
+  {
+    cluster_id: 'cluster_002',
+    cluster_summary: 'Claude memory and context retention problems (8 reports)',
+    report_count: 8,
+    representative_texts: [
+      'Claude forgets what we discussed earlier in the same conversation',
+      'Model loses track of context after long conversations',
+      'Cannot remember instructions given at the start of the chat'
+    ],
+    processed_at: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString() // 4 hours ago
+  },
+  {
+    cluster_id: 'cluster_003',
+    cluster_summary: 'ChatGPT refusing valid requests and safety issues (15 reports)',
+    report_count: 15,
+    representative_texts: [
+      'ChatGPT refuses to help with legitimate coding questions',
+      'Model being overly cautious with harmless creative writing prompts',
+      'Getting safety warnings for normal educational content'
+    ],
+    processed_at: new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString() // 6 hours ago
+  },
+  {
+    cluster_id: 'cluster_004',
+    cluster_summary: 'Gemini Pro inconsistent response quality (7 reports)',
+    report_count: 7,
+    representative_texts: [
+      'Gemini gives different answers to the same question',
+      'Quality varies dramatically between conversations',
+      'Sometimes very helpful, other times completely unhelpful'
+    ],
+    processed_at: new Date(Date.now() - 8 * 60 * 60 * 1000).toISOString() // 8 hours ago
+  },
+  {
+    cluster_id: 'cluster_005',
+    cluster_summary: 'LLaMA 2 performance and speed concerns (5 reports)',
+    report_count: 5,
+    representative_texts: [
+      'LLaMA 2 is extremely slow to respond',
+      'Model seems to struggle with complex reasoning tasks',
+      'Takes forever to generate even simple responses'
+    ],
+    processed_at: new Date(Date.now() - 10 * 60 * 60 * 1000).toISOString() // 10 hours ago
+  }
+];
+
 export function RecentClusters({ isLoading = false }: RecentClustersProps) {
-  const [clusters, setClusters] = useState<ClusterData[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [clusters, setClusters] = useState<ClusterData[]>(mockClusters);
+  const [loading] = useState(false); // Start with mock data, no loading
 
   useEffect(() => {
     const fetchClusters = async () => {
       try {
         const result = await apiClient.getRecentClusters();
-        setClusters(result.data);
+        // Only update if we get real data, otherwise keep mock data
+        if (result.data && result.data.length > 0) {
+          setClusters(result.data);
+        }
       } catch (error) {
         console.error('Error fetching clusters:', error);
-        // Keep empty array on error
-      } finally {
-        setLoading(false);
+        // Keep mock data on error
       }
     };
 

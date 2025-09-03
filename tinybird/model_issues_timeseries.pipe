@@ -1,0 +1,59 @@
+DESCRIPTION >
+    Time-series of issue report counts for all models over time.
+    Returns daily report counts for each model that can be used in area charts.
+    Counts all report events individually.
+    Supports time_range parameter: 7d, 30d, 90d, 1y
+
+NODE date_range
+SQL >
+    %
+    SELECT
+        today() - INTERVAL number DAY as date
+    FROM numbers(
+        CASE 
+            WHEN {{String(time_range, '30d')}} = '7d' THEN 7
+            WHEN {{String(time_range, '30d')}} = '30d' THEN 30  
+            WHEN {{String(time_range, '30d')}} = '90d' THEN 90
+            WHEN {{String(time_range, '30d')}} = '1y' THEN 365
+            ELSE 30
+        END
+    )
+
+NODE model_reports
+SQL >
+    %
+    SELECT
+        toDate(timestamp) as date,
+        model_name,
+        count() as report_count
+    FROM llm_events
+    WHERE event_type = 'report'
+        AND timestamp >= (
+            CASE 
+                WHEN {{String(time_range, '30d')}} = '7d' THEN today() - INTERVAL 7 DAY
+                WHEN {{String(time_range, '30d')}} = '30d' THEN today() - INTERVAL 30 DAY
+                WHEN {{String(time_range, '30d')}} = '90d' THEN today() - INTERVAL 90 DAY
+                WHEN {{String(time_range, '30d')}} = '1y' THEN today() - INTERVAL 365 DAY
+                ELSE today() - INTERVAL 30 DAY
+            END
+        )
+        AND model_name != ''
+        AND model_name IS NOT NULL
+    GROUP BY toDate(timestamp), model_name
+
+NODE timeseries
+SQL >
+    SELECT
+        dr.date as date,
+        COALESCE(models.model_name, '') as model_name,
+        COALESCE(mr.report_count, 0) as report_count
+    FROM date_range dr
+    CROSS JOIN (
+        SELECT DISTINCT model_name 
+        FROM model_reports
+        WHERE model_name != ''
+    ) models
+    LEFT JOIN model_reports mr ON dr.date = mr.date AND models.model_name = mr.model_name
+    ORDER BY dr.date ASC, models.model_name ASC
+
+TYPE endpoint

@@ -114,6 +114,37 @@ export async function GET(request: NextRequest) {
           })) || []
         });
 
+      case 'model_issues_timeseries':
+        const modelTimeseriesParams: Record<string, string> = {};
+        if (timeRange) modelTimeseriesParams.time_range = timeRange;
+        if (modelFamily) modelTimeseriesParams.model_family = modelFamily;
+        const modelTimeseriesData = await callTinybirdPipe('model_issues_timeseries', modelTimeseriesParams);
+        
+        // Transform the flat data into the format expected by the frontend
+        const transformedData: Record<string, Record<string, string | number>> = {};
+        const models: Set<string> = new Set();
+        
+        modelTimeseriesData.data?.forEach((item: { date: string; model_name: string; report_count: number }) => {
+          // Skip empty model names
+          if (!item.model_name || item.model_name.trim() === '') {
+            return;
+          }
+          
+          if (!transformedData[item.date]) {
+            transformedData[item.date] = { date: item.date };
+          }
+          transformedData[item.date][item.model_name] = item.report_count;
+          models.add(item.model_name);
+        });
+        
+        const finalData = Object.values(transformedData).sort((a, b) => String(a.date).localeCompare(String(b.date)));
+        const modelsList = Array.from(models).sort();
+        
+        return NextResponse.json({
+          data: finalData,
+          models: modelsList
+        });
+
       default:
         return NextResponse.json({ error: 'Invalid type parameter' }, { status: 400 });
     }

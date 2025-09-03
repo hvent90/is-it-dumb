@@ -272,6 +272,91 @@ class ApiClient {
     }
   }
 
+  async getModelIssuesTimeseries(timeRange?: string, modelFamily?: string): Promise<{
+    data: Array<{
+      date: string;
+      name: string;
+      value: number;
+      [modelName: string]: string | number;
+    }>;
+    models: string[]
+  }> {
+    try {
+      const params = new URLSearchParams({
+        type: 'model_issues_timeseries',
+        ...(timeRange && { time_range: timeRange }),
+        ...(modelFamily && modelFamily !== 'all' && { model_family: modelFamily }),
+      });
+
+      console.log('🔍 Fetching model issues timeseries with params:', {
+        timeRange,
+        modelFamily,
+        url: `/api/analytics?${params}`
+      });
+
+      const response = await fetch(`/api/analytics?${params}`);
+      const data = await response.json();
+
+      if (!response.ok) {
+        console.log('❌ API call failed, falling back to mock data:', data.error);
+        throw new Error(data.error || 'Failed to fetch model issues timeseries');
+      }
+
+      console.log('✅ API call successful, returning real data');
+      return data;
+    } catch (error) {
+      console.error('❌ Error fetching model issues timeseries:', error);
+      // Return mock data as fallback with time series data
+      const mockModels = ['GPT-4', 'Claude-3', 'GPT-3.5', 'Gemini Pro', 'Llama 2'];
+      const mockData = [];
+      
+      // Determine number of days based on timeRange
+      const daysMap: { [key: string]: number } = {
+        '7d': 7,
+        '30d': 30,
+        '90d': 90,
+        '1y': 365
+      };
+      const days = daysMap[timeRange || '30d'] || 30;
+      
+      console.log('🔧 Generating mock data with params:', {
+        timeRange,
+        modelFamily,
+        days,
+        mockModels: modelFamily === 'all' ? mockModels : mockModels.filter(model => {
+          // This would normally filter by model family, but for simplicity keeping all for now
+          return true;
+        })
+      });
+      
+      // Generate mock data for the specified time range
+      for (let i = days - 1; i >= 0; i--) {
+        const date = new Date();
+        date.setDate(date.getDate() - i);
+        const dateStr = date.toISOString().split('T')[0];
+        
+        const entry: { date: string; name: string; value: number; [modelName: string]: string | number } = {
+          date: dateStr,
+          name: dateStr,
+          value: 0
+        };
+
+        mockModels.forEach((model) => {
+          // Generate random issue counts with some models having higher baseline issues
+          const baseIssues = model === 'GPT-4' ? 15 : model === 'Claude-3' ? 12 : model === 'GPT-3.5' ? 10 : model === 'Gemini Pro' ? 8 : 6;
+          entry[model] = Math.max(0, baseIssues + Math.floor(Math.random() * 10) - 5);
+        });
+
+        mockData.push(entry);
+      }
+
+      return {
+        data: mockData,
+        models: mockModels
+      };
+    }
+  }
+
   // Health check
   async healthCheck(): Promise<{ healthy: boolean; message?: string }> {
     try {

@@ -1,26 +1,16 @@
 DESCRIPTION >
     Count of reports per issue_category, ordered by count descending.
-    Uses argMax to deduplicate reports based on session_id and timestamp.
-
-NODE reports_deduped
-SQL >
-    SELECT
-        session_id,
-        argMax(issue_category, timestamp) as issue_category,
-        argMax(model_name, timestamp) as model_name,
-        argMax(severity, timestamp) as severity,
-        argMax(product_context, timestamp) as product_context
-    FROM llm_events
-    WHERE event_type = 'report'
-    GROUP BY session_id
+    Counts all report events individually.
 
 NODE issue_counts
 SQL >
     SELECT
         issue_category,
         count() as report_count
-    FROM reports_deduped
-    WHERE issue_category != '' AND issue_category IS NOT NULL
+    FROM llm_events
+    WHERE event_type = 'report'
+        AND issue_category != ''
+        AND issue_category IS NOT NULL
     GROUP BY issue_category
     ORDER BY report_count DESC
 

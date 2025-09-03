@@ -14,9 +14,13 @@ import {
   Pie,
   Cell,
   Legend,
+  AreaChart,
+  Area,
+  LineChart,
+  Line,
 } from 'recharts';
 
-export type ChartType = 'bar' | 'pie';
+export type ChartType = 'bar' | 'pie' | 'area' | 'line';
 
 interface ChartData {
   name: string;
@@ -34,7 +38,12 @@ interface AnalyticsChartProps {
   colors?: string[];
   onBarClick?: (data: ChartData) => void;
   onPieClick?: (data: ChartData) => void;
+  onAreaClick?: (data: ChartData) => void;
+  onLineClick?: (data: ChartData) => void;
   isLoading?: boolean;
+  areaDataKeys?: string[];
+  lineDataKeys?: string[];
+  customHeader?: React.ReactNode;
 }
 
 const DEFAULT_COLORS = [
@@ -58,7 +67,12 @@ export function AnalyticsChart({
   colors = DEFAULT_COLORS,
   onBarClick,
   onPieClick,
+  onAreaClick,
+  onLineClick,
   isLoading = false,
+  areaDataKeys = [],
+  lineDataKeys = [],
+  customHeader,
 }: AnalyticsChartProps) {
   if (isLoading) {
     return (
@@ -123,13 +137,133 @@ export function AnalyticsChart({
     </ResponsiveContainer>
   );
 
+  const renderAreaChart = () => (
+    <ResponsiveContainer width="100%" height={height}>
+      <AreaChart data={data} margin={{ top: 10, right: 20, left: 10, bottom: 25 }}>
+        <CartesianGrid strokeDasharray="3 3" />
+        <XAxis
+          dataKey={nameKey}
+          angle={-45}
+          textAnchor="end"
+          height={50}
+          interval="preserveStartEnd"
+          tickFormatter={(value) => {
+            // Format date as MM/DD for better readability
+            const date = new Date(value);
+            return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+          }}
+        />
+        <YAxis />
+        <Tooltip 
+          labelFormatter={(value) => {
+            // Format tooltip date
+            const date = new Date(value);
+            return date.toLocaleDateString('en-US', { 
+              weekday: 'short', 
+              month: 'short', 
+              day: 'numeric' 
+            });
+          }}
+        />
+        <Legend />
+        {areaDataKeys.length > 0 ? (
+          areaDataKeys.map((key, index) => (
+            <Area
+              key={key}
+              type="monotone"
+              dataKey={key}
+              stackId="1"
+              stroke={colors[index % colors.length]}
+              fill={colors[index % colors.length]}
+              onClick={onAreaClick ? (data) => onAreaClick(data.payload as ChartData) : undefined}
+              cursor={onAreaClick ? 'pointer' : 'default'}
+            />
+          ))
+        ) : (
+          <Area
+            type="monotone"
+            dataKey={dataKey}
+            stroke={colors[0]}
+            fill={colors[0]}
+            onClick={onAreaClick ? (data) => onAreaClick(data.payload as ChartData) : undefined}
+            cursor={onAreaClick ? 'pointer' : 'default'}
+          />
+        )}
+      </AreaChart>
+    </ResponsiveContainer>
+  );
+
+  const renderLineChart = () => (
+    <ResponsiveContainer width="100%" height={height}>
+      <LineChart data={data} margin={{ top: 10, right: 20, left: 10, bottom: 25 }}>
+        <CartesianGrid strokeDasharray="3 3" />
+        <XAxis
+          dataKey={nameKey}
+          angle={-45}
+          textAnchor="end"
+          height={50}
+          interval="preserveStartEnd"
+          tickFormatter={(value) => {
+            // Format date as MM/DD for better readability
+            const date = new Date(value);
+            return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+          }}
+        />
+        <YAxis />
+        <Tooltip 
+          labelFormatter={(value) => {
+            // Format tooltip date
+            const date = new Date(value);
+            return date.toLocaleDateString('en-US', { 
+              weekday: 'short', 
+              month: 'short', 
+              day: 'numeric' 
+            });
+          }}
+        />
+        <Legend />
+        {lineDataKeys.length > 0 ? (
+          lineDataKeys.map((key, index) => (
+            <Line
+              key={key}
+              type="monotone"
+              dataKey={key}
+              stroke={colors[index % colors.length]}
+              strokeWidth={2}
+              dot={{ r: 3 }}
+              activeDot={{ r: 5 }}
+              onClick={onLineClick ? (data) => onLineClick(data.payload as ChartData) : undefined}
+              cursor={onLineClick ? 'pointer' : 'default'}
+            />
+          ))
+        ) : (
+          <Line
+            type="monotone"
+            dataKey={dataKey}
+            stroke={colors[0]}
+            strokeWidth={2}
+            dot={{ r: 3 }}
+            activeDot={{ r: 5 }}
+            onClick={onLineClick ? (data) => onLineClick(data.payload as ChartData) : undefined}
+            cursor={onLineClick ? 'pointer' : 'default'}
+          />
+        )}
+      </LineChart>
+    </ResponsiveContainer>
+  );
+
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>{title}</CardTitle>
-      </CardHeader>
+      {customHeader || (
+        <CardHeader>
+          <CardTitle>{title}</CardTitle>
+        </CardHeader>
+      )}
       <CardContent>
-        {type === 'bar' ? renderBarChart() : renderPieChart()}
+        {type === 'bar' ? renderBarChart() : 
+         type === 'pie' ? renderPieChart() : 
+         type === 'area' ? renderAreaChart() : 
+         renderLineChart()}
       </CardContent>
     </Card>
   );

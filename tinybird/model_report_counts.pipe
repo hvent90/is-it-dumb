@@ -1,26 +1,16 @@
 DESCRIPTION >
     Count of reports per model_name, ordered by count descending.
-    Uses argMax to deduplicate reports based on session_id and timestamp.
-
-NODE reports_deduped
-SQL >
-    SELECT
-        session_id,
-        argMax(model_name, timestamp) as model_name,
-        argMax(issue_category, timestamp) as issue_category,
-        argMax(severity, timestamp) as severity,
-        argMax(product_context, timestamp) as product_context
-    FROM llm_events
-    WHERE event_type = 'report'
-    GROUP BY session_id
+    Counts all report events individually.
 
 NODE model_counts
 SQL >
     SELECT
         model_name,
         count() as report_count
-    FROM reports_deduped
-    WHERE model_name != ''
+    FROM llm_events
+    WHERE event_type = 'report'
+        AND model_name != ''
+        AND model_name IS NOT NULL
     GROUP BY model_name
     ORDER BY report_count DESC
 
